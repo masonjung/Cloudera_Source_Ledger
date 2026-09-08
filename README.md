@@ -1,46 +1,129 @@
-# URLvestigia — Cloudera Forge Accelerator
+# Cloudera Blueprint: URLvestigia
 
-**Natural-language text in, a governed table of URLs out.** Type a question, get a
-persisted list of source links — with the query, provider, engines, region, and time
-window stored alongside, so a search becomes an artifact instead of an activity.
+**A governed URL table**
 
-Search the web, Wikipedia, OpenAlex, or arXiv. Each exposes only the options it
-genuinely applies, and the record says which.
+## Table of Contents
 
-Free to run: no API keys, no accounts, no build step. The only external services it
-talks to are public search-engine pages and three keyless non-profit APIs.
+- [Overview](#overview)
+- [Demo](#demo)
+- [Use Case](#use-case)
+- [Key Features](#key-features)
+- [Quickstart](#quickstart)
+- [Architecture / Software Components](#architecture)
+- [Target Audience](#target-audience)
+- [Repository Structure](#repository-structure)
+- [Prerequisites](#prerequisites)
+- [Hardware Requirements](#hardware-requirements)
+- [Documentation](#documentation)
 
-Built to the Cloudera Forge standard accelerator layout — Ingest → Lakehouse →
-Process → AI → Serve. **Retrieval, Serve, and local storage are finished and run
-today.** The CDP platform layers are written against the same schema but not yet
-connected; extending storage from SQLite to Iceberg is the next step rather than a
-missing one — see [Planned platform integration](#planned-platform-integration).
+## Overview
 
-**New here?** Walk [`docs/EXAMPLE.md`](docs/EXAMPLE.md) — one search traced across all
-five layers in about 20 minutes, on a laptop. Then use
-[`docs/GATES.md`](docs/GATES.md) to know what "done" means at each phase.
+URLvestigia turns a natural-language question into a persisted, reviewable table of
+source URLs: ask a question, get ranked links, and keep the query, provider, engines,
+region, and time window that produced them — so a search becomes an artifact instead of
+an activity. It is for **researchers and analysts** who need discovery captured rather
+than merely performed, and for the **architects and engineers** who will fork it as a
+starting point. **Why Cloudera:** the value here is the record, not the search, and a
+search record earns its keep only when it is governed, queryable, and shared — SQLite
+serves one analyst, Iceberg on Cloudera Data Warehouse serves an organisation, and SDX
+governs both without the application changing. It is the reference Cloudera Blueprint:
+one thin capability wired across all five layers of the standard stack (Ingest →
+Lakehouse → Process → AI → Serve), small enough to read in an afternoon, free to run
+with no API keys or accounts, and started on a laptop with one command — with
+**retrieval, Serve, and local SQLite storage complete and running today, and the CDP
+platform layers written against the same schema but dry-run only.**
 
-## Quickstart
+## Demo
 
-Everything below runs on a laptop, with nothing provisioned.
+No Reprise walkthrough has been recorded yet, so `reprise_link` in
+[`METADATA.yaml`](METADATA.yaml) is intentionally empty.
 
-```bash
-# 1. Clone the repository
-git clone <repo-url> && cd URLvestigia
+Until one exists, [`docs/EXAMPLE.md`](docs/EXAMPLE.md) is the evidence you can read
+**without cloning anything**: a single question followed end to end — the search call,
+the rows it writes, the SQLite → Iceberg load plan, the enrichment `MERGE`, and the
+Ranger policy that governs the result — with the actual SQL and output printed at each
+hop. It takes about 20 minutes on a laptop if you do decide to run it, and it is the
+fastest way to judge whether the blueprint does what this page claims.
 
-# 2. Run the reference app (the Serve layer)
-make install
-make dev                 # → http://127.0.0.1:8000/
+## Use Case
 
-# 3. Before a live demo: is this machine actually reaching every corpus?
-make doctor              # probes each provider and web engine, with latency
+Research that starts with "find me the sources on X" is done in a browser and lost in a
+browser. Tabs close, links live in someone's history, and which query produced which
+results is unrecoverable — so the search cannot be reviewed, repeated, or handed over.
+In regulated discovery this is not an inconvenience but a finding: systematic reviews
+and pharmacovigilance already require a defensible record of *how* a search was run, and
+that record is today reconstructed by hand, if at all.
 
-# 4. The Harden gate
-make test                # 255 passing, 13 skipped (the live tier)
-```
+**The business outcome is a governed, queryable search record.** Every URL carries the
+query and the options that produced it, so a search can be reproduced or audited months
+later. URLs returned by more than one corpus are kept as independent corroboration
+rather than collapsed as noise. The store is governable through SDX like any other
+table, which is what makes the record admissible inside an existing data-governance
+regime instead of alongside it.
 
-**Without `make`** — the Makefile needs bash, so on Windows without Git Bash or WSL use
-these directly. They are the same commands the targets wrap:
+**Industry alignment is horizontal.** The need appears wherever discovery has to be
+defensible; the sharpest fit is regulated research — systematic review,
+pharmacovigilance, competitive and patent scanning. Full reasoning and the qualification
+scorecard: [`docs/BUSINESS_CASE.md`](docs/BUSINESS_CASE.md).
+
+## Key Features
+
+- **One question, four corpora.** Reach the open web, an encyclopedia, the scholarly
+  record, and preprints through a single call, without learning four APIs or writing
+  per-source code.
+- **A record that cannot overstate itself.** Each search is stored with exactly the
+  options that were applied. Options a corpus does not support are recorded as `NULL`
+  rather than as the value the form happened to carry, so the record never claims a
+  filter that never ran.
+- **Corroboration instead of duplicates.** A URL found by more than one corpus is
+  retained as independent confirmation — a stronger signal than the same link twice from
+  one engine.
+- **A search survives a throttled engine.** Web queries go to four engines at once and
+  pool their results, so one blocked or rate-limited engine no longer empties the
+  search.
+- **Nothing to buy, nothing to build.** No API keys, no accounts, no build step, and no
+  front-end toolchain. It runs on a laptop with one command, and every page works with
+  JavaScript disabled.
+- **Demo failures found beforehand.** `make doctor` probes every corpus and every engine
+  individually with timings, so a blocked network is discovered at your desk rather than
+  in front of a customer.
+- **Links only, never page content.** The blueprint records where an answer was found
+  and never retrieves or stores the page itself, which keeps the governance surface
+  small by construction.
+
+<a id="quickstart"></a>
+
+## Quickstart / Guide
+
+Everything here runs on a laptop, with nothing provisioned.
+
+1. **Clone the repository.**
+
+   ```bash
+   git clone https://github.com/masonjung/URLvestigia && cd URLvestigia
+   ```
+
+2. **Install and run.**
+
+   ```bash
+   make install     # runtime + test dependencies
+   make dev         # → http://127.0.0.1:8000/
+   ```
+
+3. **Before a live demo,** confirm this machine reaches every corpus:
+
+   ```bash
+   make doctor      # probes each provider and each engine, with latency
+   ```
+
+4. **Verify the build.**
+
+   ```bash
+   make test        # 255 passing, 13 skipped (the live tier, opt in with --live)
+   ```
+
+**Without `make`** — the Makefile needs bash, so on Windows without Git Bash or WSL run
+the same commands directly:
 
 ```bash
 python -m pip install -r app/requirements.txt -r tests/requirements.txt
@@ -49,188 +132,137 @@ python scripts/doctor.py
 python -m pytest tests -q
 ```
 
-## How a search flows
-
-![How a search flows](docs/img/search-flow.png)
-
-Full detail in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-## The standard repo
-
-Every directory is present and documented. The right-hand column says which ones
-execute today.
-
-```
-URLvestigia/
-├── docs/         architecture · business case          written
-├── infra/        IaC — CDP CLI / Terraform             dry run, not provisioned
-├── data/         SQLite dev store · Iceberg DDL        SQLite runs, Iceberg planned
-├── pipelines/    Data Engineering (Spark) jobs         dry run, needs Spark
-├── retrieval/    search providers · notebooks · eval   runs
-├── app/          FastAPI + Jinja2 dashboard            runs
-├── governance/   SDX policies · model card             written, not imported
-├── tests/        data quality · retrieval eval         255 passing
-├── .cicd/        build → test → deploy                 dry run
-├── .github/      the same test tiers, in Actions       runs on every push
-├── .gitlab/      MR + issue templates                  written
-├── scripts/      doctor · new-accelerator.sh           runs
-└── Makefile      make dev · make test                  runs (needs bash)
-```
-
-Each directory has a `README.md` explaining what goes there, the naming conventions,
-and which Cloudera API/tool automates it.
-
-## What's in here
-
-- **`app/`** — a complete, working config-free dashboard: FastAPI + Jinja2, rendered
-  entirely server-side with **no build step and no framework** — the only script is
-  ~40 lines of inline progressive enhancement that spin the Search button while a
-  search is in flight. Every option is
-  whitelist-validated; every mutation is POST-redirect-GET. The design system is
-  documented in [`docs/architecture/DESIGN_TEMPLATE.md`](docs/architecture/DESIGN_TEMPLATE.md).
-- **`retrieval/`** — `text_to_urls()`, the whole capability behind one function, with four
-  selectable corpora and a support matrix that decides what each one may be asked;
-  plus an eval notebook that measures availability and overlap before you change a
-  default.
-- **`data/`** — the SQLite dev store every search is written to, plus the Iceberg DDL
-  and the loader that will bridge to it.
-- **`tests/`** — 255 tests across every layer, with no network in the default run.
-- **`scripts/`** — `doctor.py`, the pre-demo preflight that probes every corpus, and
-  `new-accelerator.sh`, which clones this template into a fresh accelerator repo.
-
-## Use the library directly
+**As a library:**
 
 ```python
 from urlvestigia import text_to_urls
 
-urls = text_to_urls("best python web scraping libraries", max_results=10)
+text_to_urls("best python web scraping libraries", max_results=10)
 ```
 
-Options: `provider` (`"ddgs"`, `"wikipedia"`, `"openalex"`, `"arxiv"`), `max_results`
-(10), `region` (`"wt-wt"`, e.g. `"us-en"`, `"kr-kr"`), `safesearch` (`"on"` /
-`"moderate"` / `"off"`), `timelimit` (`None`, `"d"`, `"w"`, `"m"`, `"y"`), and
-`backend` — one engine or a comma-delimited fallback chain (`"duckduckgo,yahoo"`).
-URLs come back deduplicated, in ranking order.
+Options: `provider` (`"ddgs"` · `"wikipedia"` · `"openalex"` · `"arxiv"`),
+`max_results`, `region`, `safesearch`, `timelimit`, and `backend`. URLs come back
+deduplicated, in rank order. The support matrix is in
+[`retrieval/README.md`](retrieval/README.md).
 
-**Not every provider supports every option**, and the ones that don't apply are
-dropped rather than silently ignored — `region` selects a Wikipedia language
-edition, `timelimit` filters OpenAlex and arXiv by publication date, and neither
-`safesearch` nor the engine chain means anything outside `ddgs`. The support matrix
-and the reasoning are in [`retrieval/README.md`](retrieval/README.md).
+<a id="architecture"></a>
 
-## Storage
+## Architecture / Software Components
 
-**Today, every search is written to SQLite** — a single file at
-`data/urlvestigia.db`, moved with the `URLVESTIGIA_DB` environment variable. That is
-the entire storage path that currently executes.
+A synchronous request path that runs today, and a batch path written against the same
+schema that has never been executed against a real cluster.
 
-SQLite is not a placeholder: an accelerator has to run on a laptop before any CDP
-environment exists. The designed second tier is **Apache Iceberg**, sharing the same
-schema shape, with [`data/ingest/load_to_iceberg.py`](data/ingest/load_to_iceberg.py)
-as the bridge — written, exercised against its own dry run, and not yet connected to
-anything. See [Planned platform integration](#planned-platform-integration).
-
-`make backup` — or the **Store** button in the app — takes a dated local snapshot of
-the dev store, safe to take while the app is serving and never overwriting a previous
-one. Details in [`data/README.md`](data/README.md#backups).
-
-Only links are stored, never page content.
-
-## Start a new accelerator from this template
-
-```bash
-make new VERTICAL=healthcare USECASE=readmission-risk
+```mermaid
+flowchart LR
+    subgraph SYNC["Synchronous request — runs today"]
+        SERVE["Serve · app/<br/>FastAPI + Jinja2"]
+        AI["AI · retrieval/<br/>text_to_urls()"]
+        SQLITE[("SQLite · data/db.py")]
+        SERVE --> AI --> SQLITE
+    end
+    AI -.-> WEB["ddgs engines · Wikipedia<br/>OpenAlex · arXiv"]
+    subgraph BATCH["Batch path — designed, never run for real"]
+        INGEST["Ingest · data/ingest/"]
+        ICEBERG[("Iceberg · data/iceberg/")]
+        PROCESS["Process · pipelines/<br/>enrichment MERGE"]
+        INGEST --> ICEBERG --> PROCESS
+    end
+    SQLITE -. "scheduled job" .-> INGEST
+    GOV["Governance · SDX (Ranger, Atlas)"] -.-> SYNC
+    GOV -.-> BATCH
 ```
 
-Copies the tracked layout into a sibling directory, clears this accelerator's worked
-example while keeping every directory `README.md`, re-points the name, and
-initialises a fresh git repo. Pass `--dry-run` to the script to print the plan first.
+| Layer | Component | Cloudera service | State |
+| --- | --- | --- | --- |
+| Serve | FastAPI + Jinja2 dashboard, server-rendered | Cloudera AI Application | runs locally |
+| AI | `text_to_urls()` metasearch over four corpora | Cloudera AI Workbench | runs locally |
+| Ingest | SQLite → Iceberg loader | Cloudera Data Engineering | dry run only |
+| Lakehouse | `raw_searches`, `raw_search_urls`, `curated_urls` | Iceberg on CDW | DDL never applied |
+| Process | URL normalisation and enrichment (Spark) | Cloudera Data Engineering | dry run only |
+| Governance | Ranger policies, Atlas lineage, model card | SDX | never imported |
 
-## The Forge standard
+**Dependencies and security review scope.** Runtime dependencies are FastAPI, Uvicorn,
+Jinja2, and the `ddgs` metasearch library; everything else is the Python standard
+library, and there is no front-end build chain to audit. Outbound traffic goes to four
+public search engines plus the Wikipedia, OpenAlex, and arXiv APIs — search endpoints
+only, never the result URLs themselves. Data at rest is a single SQLite file holding
+queries and links, never page content. Inbound, the Serve layer binds to localhost and
+carries no authentication today; read [Prerequisites](#prerequisites) before exposing
+it. Every platform target prints what it *would* do and changes nothing without an
+explicit `--execute`. Design decisions and the request path in full:
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-| Component | What it is | Read |
-|---|---|---|
-| A way to choose | Weighted scoring; ≥ 4.0 / 5 advances | [`.gitlab/issue_templates/`](.gitlab/issue_templates/Use-Case-Candidate.md) · [`BUSINESS_CASE.md`](docs/BUSINESS_CASE.md) |
-| A build process | 6-phase stage gate, one accountable owner per phase | [`docs/GATES.md`](docs/GATES.md) |
-| A build standard | Ingest → Lakehouse → Process → AI → Serve, governed by SDX | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
-| A standard deliverable | This repo | [`.cicd/`](.cicd/README.md) |
+## Target Audience
 
-| Week | wk 0 | wk 1 | wk 2 | wk 3–6 | wk 7 | wk 8 |
-|---|---|---|---|---|---|---|
-| **Phase** | Discover | Qualify | Architect | Build | Harden | Publish → Deployed |
+- **Solution architects** evaluating the Cloudera Blueprint standard — *no coding
+  required to assess it*; the repository is deliberately small enough to read in an
+  afternoon, and every directory carries a README explaining what belongs there.
+- **Data and ML engineers** who need a small, complete repository to fork — *comfortable
+  Python and SQL*; `make new VERTICAL=healthcare USECASE=readmission-risk` clones the
+  layout into a fresh blueprint. Extending storage to Iceberg additionally needs Spark
+  and CDP familiarity.
+- **Researchers and analysts** who need discovery captured, not just performed —
+  *no programming at all*; the dashboard is the entire interface, and the resulting
+  table is the deliverable.
 
-From selected use case to a deployed, governed solution. The Build phase scales with
-complexity.
+## Repository Structure
 
-## Status
+| Path | Description |
+| --- | --- |
+| `app/` | FastAPI + Jinja2 dashboard (Serve layer) |
+| `retrieval/` | Search providers and the eval notebook (AI layer) |
+| `data/` | SQLite dev store, schema, Iceberg DDL, and the loader |
+| `pipelines/` | Cloudera Data Engineering (Spark) enrichment jobs |
+| `infra/` | Deployment configs — CDP CLI provisioning and Terraform |
+| `.cicd/` | Deployment scripts and the GitLab pipeline definition |
+| `governance/` | SDX policies, data classification, model card |
+| `docs/` | Extended documentation — architecture, business case, gates, worked example |
+| `tests/` | Unit, data-quality, and retrieval-eval tiers |
+| `scripts/` | `doctor.py` preflight, `new-accelerator.sh` scaffold |
+| `.github/` · `.gitlab/` | GitHub Actions, issue and merge-request templates |
+| `METADATA.yaml` | Catalog metadata for the Cloudera blueprint website |
+| `Makefile` | `make help` lists every target |
 
-**Solid at the web edge.** The capability this accelerator exists to deliver — text
-in, a governed table of URLs out, with the full option set recorded per search — is
-finished and working. Four corpora, a support matrix that keeps every recorded option
-honest, 255 tests, and a dashboard that runs on a laptop with one command.
+## Prerequisites
 
-**The extension worth making next is storage.** SQLite is the right store for a
-single analyst on one machine, and the wrong one past that: it serialises writes, so
-concurrent users queue behind each other; it lives on one disk, so it does not survive
-the machine; and it cannot be queried by BI tools or governed by SDX. Iceberg on CDP
-answers all three — partitioned, concurrently readable, time-travelled, and covered by
-Ranger policy. The schema shape, the DDL, the loader, and the enrichment job are
-already written against that target; what remains is connecting them. See
-[Planned platform integration](#planned-platform-integration).
+- **Python 3.11** (the version CI runs) and `git`.
+- **bash** for the `make` targets — Git Bash or WSL on Windows, or the direct commands
+  above.
+- **Outbound internet.** Searches call public engine pages and the Wikipedia, OpenAlex,
+  and arXiv APIs. Behind a proxy, set `DDGS_PROXY` or `HTTPS_PROXY`.
+- **No API keys, accounts, or credentials of any kind** for everything that runs today.
+- **CDP entitlement and the `cdp` CLI / Terraform** only for the platform layers, none
+  of which has been executed.
 
-### Before hosting it
+**Before serving this anywhere but `127.0.0.1`:** there is no authentication and no CSRF
+protection — `/clear`, `/delete/{id}`, `/dedupe`, and `/store` act on an unauthenticated
+POST — and `ingress_cidrs` defaults to `0.0.0.0/0`. Note also that query text leaves the
+environment: searches go to third-party public endpoints with no API key and therefore
+no data-processing agreement, which must be raised with any customer whose data cannot
+leave. See [`governance/DATA_CLASSIFICATION.md`](governance/DATA_CLASSIFICATION.md).
 
-Three items are open, listed here rather than left to be discovered:
+## Hardware Requirements
 
-- **No authentication and no CSRF protection.** `/clear`, `/delete/{id}`, `/dedupe`,
-  and `/store` act on an unauthenticated POST. Correct for `127.0.0.1`, wrong once the
-  app is served to anyone else.
-- **The retrieval model card carries no dated evaluation run.** Engine behaviour
-  drifts, so the claim needs a date — run `retrieval/notebooks/eval.ipynb`.
-- **`ingress_cidrs` defaults to `0.0.0.0/0`.** Fine for a sandbox, wrong anywhere
-  else.
+| Deployment | Minimum |
+| --- | --- |
+| Launchable / demo (everything that runs today) | 2 vCPU, 4 GB RAM, <1 GB disk — a laptop |
+| Production / enterprise (target, never provisioned) | CDP `LIGHT_DUTY` Data Lake; AI Workbench on `m5.xlarge`; CDE workers on `m5.2xlarge`, autoscaling 0–4. No GPU — there is no model here. |
 
-### A property of the design, not a gap
+Defaults live in [`infra/terraform/variables.tf`](infra/terraform/variables.tf). Size up
+from measured load.
 
-**Query text leaves the environment.** Searches go to third-party public endpoints
-with no API key and therefore no data-processing agreement. Raise this first with any
-customer whose data cannot leave. See
-[`governance/DATA_CLASSIFICATION.md`](governance/DATA_CLASSIFICATION.md).
+## Documentation
 
----
+- [`docs/EXAMPLE.md`](docs/EXAMPLE.md) — one search across all five layers, ~20 minutes
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the stack, the request path, the
+  decisions worth defending
+- [`docs/BUSINESS_CASE.md`](docs/BUSINESS_CASE.md) — problem, Cloudera fit, scorecard
+- [`docs/GATES.md`](docs/GATES.md) — what "done" means at each of the six phases
+- [`governance/DATA_CLASSIFICATION.md`](governance/DATA_CLASSIFICATION.md) — retention
+  and third-party disclosure
+- [`governance/model_cards/urlvestigia-retrieval.md`](governance/model_cards/urlvestigia-retrieval.md)
+  — intended use, out of scope, known limitations
+- Every directory carries its own `README.md` explaining what goes there and which
+  Cloudera tool automates it.
 
-## Planned platform integration
-
-**None of this section has run.** The CDP layers are designed, committed, reviewed,
-and dry-run clean — every script prints the exact commands it would issue — but no
-part of it has been executed against a real Cloudera environment. Treat it as an
-architecture proposal with working scaffolding, not as a deployment. Connecting it is
-the next piece of work.
-
-| Layer | Directory | Cloudera service | State |
-|---|---|---|---|
-| Serve | `app/` | Cloudera AI Application | runs locally; never published |
-| AI | `retrieval/` | Cloudera AI Workbench | runs locally; never hosted |
-| Ingest | `data/ingest/` | Cloudera Data Engineering | dry run only |
-| Lakehouse | `data/iceberg/` | Iceberg on CDW / Data Lake | DDL written; never applied |
-| Process | `pipelines/` | Cloudera Data Engineering | dry run only |
-| Governance | `governance/` | SDX — Ranger, Atlas | policies written; never imported |
-
-Every target below prints what it *would* do and changes nothing:
-
-```bash
-make -n deploy           # the whole deploy, expanded
-make provision           # one-time platform provisioning (dry run)
-make ingest              # SQLite → Iceberg load plan
-make pipelines           # URL enrichment plan, including the literal MERGE
-make govern              # SDX / Ranger policy import plan
-make help                # list all targets
-```
-
-Nothing in this repo changes a remote system without an explicit `--execute`.
-
-Connecting it would mean, in order: provision a CDP environment
-([`infra/`](infra/README.md)), apply the Iceberg DDL, import the Ranger policies,
-then register the CDE jobs. `.cicd/deploy.sh` sequences exactly that, and
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) explains why the order matters —
-access control lands before data moves, and data lands before anything serves it.
+Licensed under [Apache 2.0](LICENSE).

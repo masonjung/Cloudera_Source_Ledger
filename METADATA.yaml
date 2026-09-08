@@ -1,33 +1,46 @@
 # Cloudera Blueprint catalog metadata
-# Populate fields used by the master blueprint website and internal catalog.
+# Consumed by the master blueprint website and the internal catalog.
+#
+# Every field below is either filled or deliberately empty. An empty string means
+# "does not exist yet" and is the honest answer; a plausible-looking placeholder is
+# worse than a blank, because a reviewer reads it as filled in and follows it.
 
 # --- Identity ---
-name: "Turn Text into a Governed Table of URLs"
-slug: "urlvestigia"                                # URL-safe repo / catalog identifier
+name: "URLvestigia — Text to a Governed Table of URLs"
+slug: "urlvestigia"                          # URL-safe repo / catalog identifier
 description: "Turn a natural-language question into a persisted, governed table of source URLs."
-reprise_link: "https://[catalog-url]/urlvestigia"          # Public reprise link
+reprise_link: ""                             # Public reprise link. Empty: no walkthrough has
+                                             # been recorded. docs/EXAMPLE.md is the written
+                                             # equivalent -- one search traced across all five
+                                             # layers in ~20 minutes. See "Demo" in README.md.
 
 # --- Classification (website filters) ---
 catalog_classification:
-  - Enterprise Blueprint                     # Options: Enterprise Blueprint | Research | Launchable (AMP) | Developer Example
-launchable: false                            # No .project-metadata.yaml — this is a Forge template, not an AMP
-lifecycle_status: Active                     # Maintained, not retired. The web-search
-                                             # capability is complete; storage currently ends
-                                             # at SQLite, and the CDP/Iceberg tier is written
-                                             # but not yet connected. Three Harden items stand
-                                             # before this is hosted -- see "Status" and
-                                             # "Planned platform integration" in README.md.
+  - Developer Example                   # Options: Enterprise Blueprint | Research | Launchable (AMP) | Developer Example
+launchable: True                            # No .project-metadata.yaml -- this is a Forge template, not an AMP
+lifecycle_status: Active                     # Maintained, not retired. The retrieval and Serve
+                                             # layers are complete and run today; storage ends at
+                                             # SQLite and the CDP/Iceberg tier is written but not
+                                             # connected. Three Harden items stand before this is
+                                             # served anywhere but 127.0.0.1 -- see "Status" in
+                                             # README.md and the phase table in docs/GATES.md.
 
 # --- Industry & alignment ---
-industry: General                            # e.g., General | Telecom | Financial Services | Healthcare & Life Sciences | Retail | Media | Physical AI & Robotics
-industry_alignment: "Horizontal"             # `make new VERTICAL=… USECASE=…` re-points it at any vertical
-target_vertical: ""                          # Optional finer-grained vertical
+industry: "General"                          # e.g., General | Telecom | Financial Services | Healthcare & Life Sciences | Retail | Media | Physical AI & Robotics
+industry_alignment: "Horizontal"             # The capability is domain-independent; `make new
+                                             # VERTICAL=... USECASE=...` re-points it at any vertical
+target_vertical: ""                          # Empty by design: horizontal accelerators claim none
 
 # --- Tags (website search & browse) ---
+# Capability and audience, not implementation. Someone searching the catalog knows
+# what they need to do, not which web framework does it.
 tags:
   - metasearch
   - web-search
   - retrieval
+  - provenance
+  - reproducible-research
+  - literature-review
   - iceberg
   - data-governance
   - accelerator-template
@@ -35,34 +48,37 @@ tags:
 # --- Relationships ---
 product_mapping:                             # TARGET integration, not exercised. Only the two AI
                                              # entries run today, and only locally; the CDE / CDW /
-                                             # SDX paths dry-run and stop. See "Planned platform
-                                             # integration" in README.md and the state column in
-                                             # docs/ARCHITECTURE.md "Layer by layer".
+                                             # SDX paths dry-run and stop. See "Status" and the
+                                             # layer/state table under "Architecture / Software
+                                             # Components" in README.md.
   - Cloudera AI Application                  # Serve — app/, FastAPI + Jinja2
   - Cloudera AI Workbench                    # AI — retrieval/urlvestigia.py, text_to_urls()
   - Cloudera Data Engineering                # Ingest + Process — data/ingest/, pipelines/
   - Cloudera Data Warehouse                  # Lakehouse — Iceberg on CDW / Data Lake
   - SDX                                      # Governance — Ranger policies, Atlas lineage
-# model_dependencies:                          # None. URLvestigia has no weights, no embeddings, and no
-#                                              # inference of its own — it is a metasearch client.
-#                                              # See governance/model_cards/urlvestigia-retrieval.md.
-#                                              # It does call third-party public endpoints (ddgs web
-#                                              # engines, Wikipedia, OpenAlex, arXiv), which is a
-#                                              # deployability constraint rather than a model
-#                                              # dependency: governance/DATA_CLASSIFICATION.md.
+
+model_dependencies: []                       # None, and stated as an empty list rather than an
+                                             # omitted field so the catalog records the answer.
+                                             # URLvestigia has no weights, no embeddings, and no
+                                             # inference of its own -- it is a metasearch client;
+                                             # see governance/model_cards/urlvestigia-retrieval.md.
+                                             # It does call third-party public endpoints (ddgs web
+                                             # engines, Wikipedia, OpenAlex, arXiv), which is a
+                                             # deployability constraint rather than a model
+                                             # dependency: governance/DATA_CLASSIFICATION.md.
 
 # --- Provenance ---
-publisher: cloudera                          # cloudera | partner-name
-source: Internal                             # Internal | Partner | NVIDIA Adaptation | Customer
+publisher: "cloudera"                        # cloudera | partner-name
+source: "Internal"                           # Internal | Partner | NVIDIA Adaptation | Customer
 
 # --- Repository & assets ---
 public_github_link: "https://github.com/masonjung/URLvestigia"
-#private_github_link: ""                      # If applicable, original repo during development
+#private_github_link: ""                     # Not applicable -- the repo above is public
 
 # --- Ownership ---
 maintainer_name: "Minseok Jung"
 
 # --- Dates ---
 date_created: "2026-06-22"                   # First commit
-date_updated: "2026-08-15"
+date_updated: "2026-09-08"                   # Bump on the commit that ships a change worth cataloguing
 published_date: ""                           # Set when it first appears in the catalog
