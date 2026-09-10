@@ -60,8 +60,10 @@ accelerator that does add a model should name the slot back.
 
 A search is synchronous and touches three layers:
 
-1. **`POST /search`** — `app/server.py` whitelists every option against `OPTIONS`,
-   clamps `max_results` to 1–50, and joins the checked engines into a fallback chain.
+1. **`POST /search`** — `app/server.py` hands the form to `record.normalize()`, which
+   whitelists every option against `OPTIONS`, clamps `max_results` to 1–50, and joins
+   the checked engines into a fallback chain. `scripts/cli.py` and `quickstart.ipynb`
+   enter here instead of at the route, through the same function.
 2. **Retrieval** — `urlvestigia.text_to_urls()` dispatches to the selected provider,
    dropping any option that provider does not apply. `ddgs` queries web engines
    concurrently and pools whichever results come back first; the others call one

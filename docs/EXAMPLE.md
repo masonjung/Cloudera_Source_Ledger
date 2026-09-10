@@ -59,7 +59,8 @@ make dev        # → http://127.0.0.1:8000/
 Type a question, pick engines, hit **Search**. What happens:
 
 1. `POST /search` — every option is whitelisted against `OPTIONS` in
-   [`app/server.py`](../app/server.py); `max_results` is clamped to 1–50.
+   [`data/record.py`](../data/record.py); `max_results` is clamped to 1–50.
+   (`python scripts/cli.py search "..."` reaches the same code without the browser.)
 2. Checked engines are filtered, deduplicated, and joined into a fallback chain.
    Order is preserved for a reproducible request record, not because engines are
    tried in sequence — see step 1.

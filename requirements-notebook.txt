@@ -1,0 +1,20 @@
+# Jupyter, for quickstart.ipynb and retrieval/notebooks/eval.ipynb.
+#
+#   pip install -r requirements-notebook.txt     # or: make install-notebook
+#
+# Deliberately NOT pulled in by `make install`. Nothing the dashboard, the CLI, or
+# the test suite does needs Jupyter, and adding its transitive tree to the one
+# command the README tells a first-time reader to run would make both the install
+# and the dependency review substantially larger for a convenience many readers
+# will never use.
+#
+# Pulls in the Serve layer (and, through it, the AI layer), because quickstart.ipynb
+# ends by starting the dashboard and handing you a link — the point being that the
+# notebook needs no terminal at any step. The notebook installs anything missing at
+# runtime anyway, so this file is what makes that step instant rather than what
+# makes it possible.
+
+-r app/requirements.txt
+
+jupyterlab>=4.0.0
+ipykernel>=6.29.0

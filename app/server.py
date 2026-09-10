@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT / "data"))
 
 import backup
 import db
+import record
 import urlvestigia
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import FileResponse, RedirectResponse
@@ -41,38 +42,16 @@ db.init_db()
 # nothing here needs its own.
 log = logging.getLogger("urlvestigia.serve")
 
-# Allowed values per search option; first entry is the default fallback.
-#
-# `provider` currently offers every corpus retrieval/ implements, but it stays a
-# whitelist rather than a mirror of urlvestigia.REGISTRY — the two are allowed to
-# diverge. Anything not listed here is coerced back to the default by _pick(), so
-# a provider withheld from the UI cannot be reached by posting it by hand either.
-OPTIONS = {
-    "provider": ["ddgs", "wikipedia", "openalex", "arxiv"],
-    "timelimit": ["", "d", "w", "m", "y"],
-    "backend": ["duckduckgo", "yahoo", "startpage", "yandex"],
-    "safesearch": ["moderate", "off", "on"],
-    "region": ["wt-wt", "us-en", "uk-en", "kr-kr", "jp-jp", "de-de", "fr-fr"],
-}
-
-# Labels for every provider that has ever been searched, not just the ones on offer:
-# `home()` reads this to render the Provider column, so dropping a retired provider's
-# label here would relabel its historical rows with the bare id.
-PROVIDER_LABELS = {
-    "ddgs": "Web",
-    "wikipedia": "Wikipedia",
-    "openalex": "OpenAlex",
-    "arxiv": "arXiv",
-}
-
-# The per-search options a provider might not apply. `backend` is in here with the
-# rest: the engine chain is just another control that only one provider supports.
-TOGGLEABLE = ("region", "safesearch", "timelimit", "backend")
-
-
-def _pick(name, value):
-    allowed = OPTIONS[name]
-    return value if value in allowed else allowed[0]
+# The whitelists and labels the routes below enforce. They are defined in
+# data/record.py, not here, because the dashboard is no longer the only thing that
+# writes a search record — scripts/cli.py and quickstart.ipynb do too, and a
+# whitelist restated per interface is a whitelist that eventually disagrees with
+# itself. Aliased rather than referenced through `record.` so this module still
+# reads as what enforces them, and so a template or a test can keep asking the
+# server what it offers.
+OPTIONS = record.OPTIONS
+PROVIDER_LABELS = record.PROVIDER_LABELS
+TOGGLEABLE = record.TOGGLEABLE
 
 
 def _providers():
@@ -144,33 +123,18 @@ def search(
     text = text.strip()
     if not text:
         return _redirect()
-    provider = _pick("provider", provider)
-    timelimit = _pick("timelimit", timelimit)
-    safesearch = _pick("safesearch", safesearch)
-    region = _pick("region", region)
-    # Checked engines, whitelist-filtered and deduped. None checked means all of them,
-    # not one of them — for resilience, not coverage. Selecting more engines is *not*
-    # free extra results: ddgs queries them concurrently and drops the ones that miss
-    # its first wait(), so a wider selection can return fewer URLs than the best single
-    # engine (see "Multi-engine is resilience" in docs/ARCHITECTURE.md). What it buys
-    # is that one blocked engine no longer empties the search, and that is the failure
-    # actually being seen — duckduckgo alone returned nothing on every attempt from
-    # this network while all four returned results on every attempt.
-    engines = [b for b in dict.fromkeys(backend) if b in OPTIONS["backend"]]
-    backend = ",".join(engines or OPTIONS["backend"])
-    max_results = min(max(max_results, 1), 50)
+    # Whitelisting, engine deduplication, and clamping all happen in one place now;
+    # what comes back is both what gets searched with and what gets recorded.
+    opts = record.normalize(
+        provider=provider, max_results=max_results, timelimit=timelimit,
+        safesearch=safesearch, region=region, backend=backend,
+    )
+    # Both failure branches below name the provider and the engines that were asked.
+    provider, backend = opts["provider"], opts["backend"]
     try:
         # Every option is passed; text_to_urls drops the ones this provider does
-        # not apply, reading the same matrix used below.
-        urls = urlvestigia.text_to_urls(
-            text,
-            provider=provider,
-            max_results=max_results,
-            region=region,
-            safesearch=safesearch,
-            timelimit=timelimit or None,
-            backend=backend,
-        )
+        # not apply, reading the same matrix record.save() reads.
+        urls = record.search(text, opts)
     except urlvestigia.EngineError as exc:
         log.warning("%s search failed: every engine errored (%s) for %r",
                     provider, exc, text)
@@ -197,15 +161,9 @@ def search(
         return _redirect("No results found.")
     # Record only what this provider actually applied. An unsupported option is
     # stored NULL rather than as the value the form happened to post — a Wikipedia
-    # search stamped timelimit="w" would claim a filter that never ran.
-    supported = urlvestigia.supports(provider)
-    chosen = {"region": region, "safesearch": safesearch,
-              "timelimit": timelimit, "backend": backend}
-    db.save_search(
-        text, urls, provider=provider, max_results=max_results,
-        **{name: (value if name in supported else None)
-           for name, value in chosen.items()},
-    )
+    # search stamped timelimit="w" would claim a filter that never ran. The rule
+    # itself lives in data/record.py, where every interface reaches it.
+    record.save(text, urls, opts)
     return _redirect(f'{len(urls)} result{"" if len(urls) == 1 else "s"} saved for "{text}"')
 
 

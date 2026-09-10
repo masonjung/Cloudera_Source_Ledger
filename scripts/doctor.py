@@ -85,17 +85,22 @@ def _environment():
     ]
 
 
-def _rows():
-    """Every probe, API providers first — they are the ones that should never fail."""
-    rows = []
+def rows():
+    """Every probe, API providers first — they are the ones that should never fail.
+
+    Public, unlike the rest of the helpers here: `quickstart.ipynb` runs the same
+    preflight and then branches on the result, choosing a provider this network can
+    actually reach instead of failing at the first search.
+    """
+    probes = []
     for name in ("wikipedia", "openalex", "arxiv"):
-        rows.append(_probe(name, lambda name=name: urlvestigia.text_to_urls(
+        probes.append(_probe(name, lambda name=name: urlvestigia.text_to_urls(
             PROBE, provider=name, max_results=PROBE_RESULTS)))
     # Each engine alone. Together they would hide exactly what this is here to find.
     for engine in ("duckduckgo", "yahoo", "startpage", "yandex"):
-        rows.append(_probe(f"web: {engine}", lambda e=engine: urlvestigia.text_to_urls(
+        probes.append(_probe(f"web: {engine}", lambda e=engine: urlvestigia.text_to_urls(
             PROBE, provider="ddgs", max_results=PROBE_RESULTS, backend=e)))
-    return rows
+    return probes
 
 
 def main():
@@ -105,11 +110,11 @@ def main():
         print(f"  {name:22} {value}")
     print()
 
-    rows = _rows()
-    for label, status, detail, seconds in rows:
+    probes = rows()
+    for label, status, detail, seconds in probes:
         print(f"  {MARK[status]}  {label:16} {seconds:5.1f}s  {detail}")
 
-    healthy = {label for label, status, _, _ in rows if status == OK}
+    healthy = {label for label, status, _, _ in probes if status == OK}
     apis = {"wikipedia", "openalex", "arxiv"} & healthy
     engines = {label for label in healthy if label.startswith("web: ")}
 

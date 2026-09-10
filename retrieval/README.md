@@ -180,7 +180,8 @@ If the seam is right this is small. It should be:
 1. A function in `providers.py` taking `(text, *, max_results, **options)` and
    returning absolute `http(s)` URLs in rank order.
 2. One entry in `REGISTRY` and one in `SUPPORTS`.
-3. One entry in `OPTIONS["provider"]` and `PROVIDER_LABELS` in `app/server.py`.
+3. One entry in `OPTIONS["provider"]` and `PROVIDER_LABELS` in `data/record.py` —
+   which offers it in the dashboard, the CLI, and the notebook at once.
 4. Tests in `tests/test_providers.py`.
 
 No changes to the template, the schema, or the contract tests. If a provider *does*

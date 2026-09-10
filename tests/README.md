@@ -10,8 +10,12 @@ Nothing ships until this directory is green. `make test` is what the Harden gate
 | `test_urlvestigia.py` | AI | Retrieval contract: rank order, dedupe, the `href`/`url` key rename, option forwarding, error propagation |
 | `test_providers.py` | AI | The support matrix, per-provider URL extraction, and the outbound requests — asserted on the request, not just the results |
 | `test_db.py` | Ingest | Round trips, cascade deletes, dedupe semantics, in-place migration, SQL parameterisation |
+| `test_record.py` | Ingest | The one writer: whitelisting, clamping, and the NULL rule, parametrized from the live support matrix |
 | `test_ingest.py` | Ingest | The SQLite → Iceberg bridge: what `read_sqlite` returns and that its column lists match the SELECTs |
 | `test_server.py` | Serve | Input whitelisting, clamping, POST-redirect-GET, XSS escaping, table rendering |
+| `test_hosting.py` | Serve | Where the app binds and which URL a reader is given — loopback on a laptop, the proxied port in a Cloudera AI session |
+| `test_cli.py` | Serve | The terminal interface: the same guarantees, plus exit codes, the stdout/stderr split, export grain, and ASCII output |
+| `test_quickstart.py` | Serve | `quickstart.ipynb` — the bootstrap resolving the repo from any working directory, and both notebooks committed without outputs |
 | `data_quality/test_url_normalization.py` | Process | URL normalisation — idempotence, what must collapse and what must stay distinct |
 | `data_quality/test_enrichment_sql.py` | Process | That `STAGE_SQL` and `curated_urls` stay column-aligned, since `INSERT *` binds positionally |
 | `eval/test_retrieval_eval.py` | AI | Eval harness: the retrieval contract, plus an opt-in live tier |
@@ -29,7 +33,7 @@ pytest tests -q -k dedupe     # one behaviour
 Install with `pip install -r app/requirements.txt -r tests/requirements.txt`, or
 just `make install`.
 
-Current state: **255 passing, 13 skipped** (the live tier).
+Current state: **346 passing, 13 skipped** (the live tier).
 
 ## The two tiers
 

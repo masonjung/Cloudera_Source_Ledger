@@ -20,7 +20,7 @@ PORT       ?= 8000
 BACKUP_DIR ?= backups
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev doctor test test-live backup ingest pipelines govern provision deploy new clean
+.PHONY: help install install-notebook dev cli notebook doctor test test-live backup ingest pipelines govern provision deploy new clean
 
 ## help: list every target
 help:
@@ -32,6 +32,12 @@ help:
 	@echo "    make doctor      preflight every provider and engine (run before a demo)"
 	@echo "    make test        the Harden gate (no network)"
 	@echo "    make test-live   add the tests that call real search engines"
+	@echo ""
+	@echo "  Search without the dashboard"
+	@echo "    python scripts/cli.py search \"your question\"   → urls on stdout, recorded"
+	@echo "    make cli ARGS=--help              the whole terminal interface"
+	@echo "    make install-notebook             add Jupyter"
+	@echo "    make notebook                     open quickstart.ipynb"
 	@echo ""
 	@echo "  Keep the dev store"
 	@echo "    make backup      dated local snapshot → $(BACKUP_DIR)/ (safe while running)"
@@ -62,6 +68,24 @@ install:
 dev:
 	@echo "→ http://127.0.0.1:$(PORT)/"
 	$(PYTHON) -m uvicorn app.server:app --reload --port $(PORT)
+
+## cli: the terminal interface -- make cli ARGS="search 'iceberg' --provider arxiv"
+# One ARGS target rather than a target per subcommand: a query has to survive two
+# levels of quoting to reach argparse through make, and it frequently does not.
+# Run `python scripts/cli.py search "..."` directly and this stays a shortcut for
+# the flagless commands.
+cli:
+	$(PYTHON) scripts/cli.py $(ARGS)
+
+## install-notebook: add Jupyter, for quickstart.ipynb
+install-notebook:
+	$(PYTHON) -m pip install -r requirements-notebook.txt
+
+## notebook: open the quickstart notebook
+notebook:
+	@$(PYTHON) -c "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('jupyterlab') else 1)" \
+	  || { echo "Jupyter is not installed. Run: make install-notebook"; exit 1; }
+	$(PYTHON) -m jupyter lab quickstart.ipynb
 
 ## doctor: probe every provider and engine, and say whether this machine is demo-ready
 # Calls real services, like test-live. A blocked engine here is a measurement of this

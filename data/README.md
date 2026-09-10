@@ -16,11 +16,26 @@ is the bridge between the two.
 | Path | What it is |
 |---|---|
 | `db.py` | SQLite persistence. **All application SQL lives here** — no other module writes SQL against the dev store. |
+| `record.py` | **The one writer.** Turns a search into a governed row; every interface goes through it. |
 | `schema.sql` | The SQLite schema: `searches`, `search_urls`, one index |
 | `iceberg/ddl.sql` | Iceberg DDL for the platform tier: `raw_searches`, `raw_search_urls`, `curated_urls` |
 | `ingest/load_to_iceberg.py` | Loads the SQLite dev store into the raw Iceberg tables |
 | `backup.py` | Dated local snapshots of the dev store, safe to take while it runs |
 | `urlvestigia.db` | The database itself — **gitignored**, created on first run |
+
+## One writer
+
+`db.save_search()` documents a contract its callers have to keep: an option a
+provider does not apply is stored `NULL`, an option it applies but nobody set is
+stored `""`, and collapsing the two would record a filter that never ran. That is
+the difference between a search record and a search log.
+
+A contract three interfaces each re-implement is a contract until one of them
+drifts, so none of them call `db.save_search()` directly — the dashboard, `scripts/cli.py`,
+and `quickstart.ipynb` all go through `record.save()`, which derives the NULL columns
+from `urlvestigia.supports()` rather than from anything a caller passed. `record.py` is
+the only module in `data/` that imports from `retrieval/`, and that is why: the rule
+cannot be enforced without knowing which options were actually applied.
 
 ## The model
 

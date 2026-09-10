@@ -43,8 +43,8 @@ jobs:
 
       - name: Every layer imports the way the runtime imports it
         run: |
-          python -c "import sys; sys.path[:0] = ['retrieval', 'data', 'pipelines/jobs']; import urlvestigia, db, url_enrichment; print('layers import OK')"
-          python -c "import app.server; print('serve layer imports OK')"
+          python -c "import sys; sys.path[:0] = ['retrieval', 'data', 'pipelines/jobs']; import urlvestigia, db, record, url_enrichment; print('layers import OK')"
+          python -c "import app.server; from app import hosting; print('serve layer imports OK')"
 
       # No --live. CI must never fail because a search provider is rate-limiting;
       # the live tier is run by hand before a release. See tests/README.md.

@@ -81,6 +81,10 @@ scorecard: [`docs/BUSINESS_CASE.md`](docs/BUSINESS_CASE.md).
 - **A search survives a throttled engine.** Web queries go to four engines at once and
   pool their results, so one blocked or rate-limited engine no longer empties the
   search.
+- **Three ways in, one record.** A dashboard for people who do not write code, a CLI
+  that pipes, and a Run All notebook — all writing through the same
+  [`data/record.py`](data/record.py), so the NULL rule above cannot hold in one
+  interface and quietly lapse in another.
 - **Nothing to buy, nothing to build.** No API keys, no accounts, no build step, and no
   front-end toolchain. It runs on a laptop with one command, and every page works with
   JavaScript disabled.
@@ -119,7 +123,7 @@ Everything here runs on a laptop, with nothing provisioned.
 4. **Verify the build.**
 
    ```bash
-   make test        # 255 passing, 13 skipped (the live tier, opt in with --live)
+   make test        # 346 passing, 13 skipped (the live tier, opt in with --live)
    ```
 
 **Without `make`** — the Makefile needs bash, so on Windows without Git Bash or WSL run
@@ -132,6 +136,59 @@ python scripts/doctor.py
 python -m pytest tests -q
 ```
 
+### From the terminal
+
+No server, no browser. The same governed rows, and URLs on stdout so they pipe:
+
+```bash
+python scripts/cli.py search "GLP-1 receptor agonist adverse events" --provider openalex
+python scripts/cli.py search "iceberg compaction" --backend duckduckgo --timelimit y -n 25
+python scripts/cli.py list --urls
+python scripts/cli.py export --format csv --out review-appendix.csv
+python scripts/cli.py doctor
+```
+
+`search` writes the URLs to stdout and everything else — which options this corpus
+applied, which it ignored, where the row landed — to stderr, so
+`search "..." > urls.txt` leaves a file of URLs and nothing else. Exit codes
+distinguish the cases a script has to tell apart: `0` results, `1` the search failed,
+`2` usage, `3` the corpus answered and had nothing. Full reference:
+[`scripts/README.md`](scripts/README.md).
+
+### From a notebook — no terminal at all
+
+[`quickstart.ipynb`](quickstart.ipynb) is Run All, top to bottom, from a cold clone.
+It checks what this network reaches, picks a corpus that answered, runs a search,
+shows the record, previews the export — and then **starts the dashboard and prints
+the link**, so nothing above has to be repeated in a shell. It installs whatever the
+kernel is missing as it goes, and a blocked network gets a named diagnosis rather
+than a traceback.
+
+```bash
+make install-notebook    # or: pip install -r requirements-notebook.txt
+make notebook            # or: jupyter lab quickstart.ipynb
+```
+
+### In a Cloudera AI Workbench session
+
+The same notebook is the intended path in a **Cloudera AI (CML) session** — start
+one with the JupyterLab editor on a Python 3.11 runtime, open `quickstart.ipynb`,
+and Run All. 2 vCPU / 4 GiB is ample; there is no model here and no GPU is used.
+
+Two things differ from a laptop, and the notebook handles both:
+
+- **The link.** Your browser is outside the session container, so `127.0.0.1` would
+  point at your own machine. In a session the server binds every interface on
+  `CDSW_APP_PORT` and the notebook prints the proxied address instead. On a laptop
+  it stays on loopback, because this app has no authentication — see
+  [Prerequisites](#prerequisites). The rule is in [`app/hosting.py`](app/hosting.py).
+- **Egress.** A datacenter IP is the profile the public web engines block hardest, so
+  the `ddgs` provider may return nothing from a session even though it works on a
+  laptop. This is a measurement, not a defect: the preflight names which engines
+  answered, and the notebook falls back to Wikipedia, OpenAlex, or arXiv — keyless
+  APIs that do not block on IP reputation. See
+  [`governance/model_cards/urlvestigia-retrieval.md`](governance/model_cards/urlvestigia-retrieval.md).
+
 **As a library:**
 
 ```python
@@ -143,7 +200,9 @@ text_to_urls("best python web scraping libraries", max_results=10)
 Options: `provider` (`"ddgs"` · `"wikipedia"` · `"openalex"` · `"arxiv"`),
 `max_results`, `region`, `safesearch`, `timelimit`, and `backend`. URLs come back
 deduplicated, in rank order. The support matrix is in
-[`retrieval/README.md`](retrieval/README.md).
+[`retrieval/README.md`](retrieval/README.md). To search *and record* in one call, use
+[`data/record.py`](data/record.py) instead — `record.run("...", provider="arxiv")`
+returns the URLs and writes the row.
 
 <a id="architecture"></a>
 
@@ -203,7 +262,9 @@ explicit `--execute`. Design decisions and the request path in full:
   and CDP familiarity.
 - **Researchers and analysts** who need discovery captured, not just performed —
   *no programming at all*; the dashboard is the entire interface, and the resulting
-  table is the deliverable.
+  table is the deliverable. If you would rather work in a notebook,
+  [`quickstart.ipynb`](quickstart.ipynb) runs top to bottom without an edit, and
+  `python scripts/cli.py export --format csv` gets the record out as an appendix.
 
 ## Repository Structure
 
@@ -218,8 +279,10 @@ explicit `--execute`. Design decisions and the request path in full:
 | `governance/` | SDX policies, data classification, model card |
 | `docs/` | Extended documentation — architecture, business case, gates, worked example |
 | `tests/` | Unit, data-quality, and retrieval-eval tiers |
-| `scripts/` | `doctor.py` preflight, `new-accelerator.sh` scaffold |
+| `scripts/` | `cli.py` terminal interface, `doctor.py` preflight, `new-accelerator.sh` scaffold |
 | `.github/` · `.gitlab/` | GitHub Actions, issue and merge-request templates |
+| `quickstart.ipynb` | Run All: preflight, one recorded search, the record, the export, and the dashboard |
+| `requirements-notebook.txt` | Jupyter, kept out of `make install` |
 | `METADATA.yaml` | Catalog metadata for the Cloudera blueprint website |
 | `Makefile` | `make help` lists every target |
 
