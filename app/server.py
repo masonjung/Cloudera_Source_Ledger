@@ -9,9 +9,11 @@ then open http://127.0.0.1:8000/
 """
 
 import logging
+import os
 import shutil
 import sys
 import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
@@ -25,12 +27,16 @@ import backup
 import db
 import record
 import urlvestigia
+from app import hosting
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.background import BackgroundTask
 
 app = FastAPI(title="URLvestigia")
+# When this process loaded its code, which is not the same as when it started
+# answering and is exactly what /healthz is asked for. See that route.
+STARTED = time.time()
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 db.init_db()
 
@@ -108,6 +114,25 @@ def home(request: Request, msg: str = ""):
         "rows": rows, "msg": msg, "stats": db.stats(),
         "db_label": _rel(db.DB_PATH), "providers": _providers(),
     })
+
+
+@app.get("/healthz")
+def healthz():
+    """Who is answering on this port — for whoever is about to hand out its link.
+
+    A socket probe says the port is taken; it cannot say by what. Anything that
+    finds a server already running — quickstart.ipynb, a deploy check — has three
+    cases to separate: this dashboard, an unrelated application, and a dashboard
+    left behind by a kernel that has since been restarted. The last one is the
+    expensive one: it serves the code as it was then, out of a process nothing
+    still holds a handle to, and it looks identical to a fresh start from the
+    outside.
+
+    Three facts answer all three, and none of them touch the database: the name to
+    recognise, the pid that makes an orphan stoppable, and when this process loaded
+    its code, which is what a caller compares its own edits against.
+    """
+    return {"app": hosting.NAME, "pid": os.getpid(), "started": STARTED}
 
 
 @app.post("/search")

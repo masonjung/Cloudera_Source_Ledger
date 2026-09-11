@@ -55,6 +55,12 @@ it belongs in `data/db.py`.
 - **POST-redirect-GET everywhere.** Every mutation (`/search`, `/delete/{id}`,
   `/dedupe`, `/clear`) ends in a 303 back to `/` carrying a `?msg=` flash. Reloading
   never re-runs a search.
+- **One route that is not a page.** `/healthz` answers with the app name, this
+  process's pid, and when it loaded its code. A socket probe can only say that a
+  port is taken — not whether what holds it is this dashboard, an unrelated
+  application, or a dashboard a restarted kernel left behind still serving
+  pre-edit code. `quickstart.ipynb` tells those apart with this route, and stops
+  the last one with the pid. See [`app/hosting.py`](hosting.py).
 - **Whitelist every input.** `OPTIONS` in [`data/record.py`](../data/record.py) is
   the single source of truth for allowed `timelimit` / `backend` / `safesearch` /
   `region` values, re-exported here as `server.OPTIONS`; `record.normalize()`

@@ -4,9 +4,12 @@ Retrieval is stubbed (see `conftest.client`), so these cover what the Serve laye
 is actually responsible for: input validation, POST-redirect-GET, and rendering.
 """
 
+import os
+import time
+
 import pytest
 import urlvestigia
-from app import server
+from app import hosting, server
 
 
 def test_home_renders(client):
@@ -15,6 +18,17 @@ def test_home_renders(client):
     assert response.status_code == 200
     assert "URLvestigia" in response.text
     assert "saved_searches" in response.text
+
+
+def test_healthz_names_the_app_the_process_and_when_it_loaded(client):
+    """A socket probe cannot tell this dashboard from an unrelated app on the same
+    port, or from a leftover serving pre-edit code out of a process nothing holds a
+    handle to. These three facts are what quickstart.ipynb tells them apart with."""
+    body = client.get("/healthz").json()
+
+    assert body["app"] == hosting.NAME
+    assert body["pid"] == os.getpid()  # TestClient runs the app in this process
+    assert body["started"] <= time.time()
 
 
 def test_empty_table_shows_a_prompt(client):

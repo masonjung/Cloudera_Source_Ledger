@@ -166,9 +166,30 @@ def test_the_dashboard_reuses_a_server_already_on_the_port(cell_source):
     """
     source = cell_source("dashboard")
 
-    assert "if not mine and not reused" in source
+    assert "starting = not mine and ADOPTED is None and not hosting.held()" in source
     assert "DASHBOARD.poll()" in source
     assert "atexit.register" in source  # no orphan holding the port after the kernel exits
+
+
+def test_the_dashboard_asks_what_is_on_the_port_not_only_whether_it_answers(cell_source):
+    """A dashboard left behind by a restarted kernel probes identically to a fresh
+    one and is the likeliest thing to be on the port when the notebook is re-run.
+    Reported as a plain "already running" it hands the reader a link to the code as
+    it was two edits ago, out of a process the notebook cannot stop."""
+    source = cell_source("dashboard")
+
+    assert "hosting.identify()" in source
+    assert "hosting.edited_since(" in source  # or a stale server goes unmentioned
+
+
+def test_the_stop_cell_can_stop_a_server_it_did_not_start(cell_source):
+    """Otherwise section 7's instruction is false in the one case it is most often
+    read in: the kernel that owned the process is gone, and the pid /healthz
+    reports is the only handle left."""
+    source = cell_source("stop")
+
+    assert "hosting.identify()" in source
+    assert 'os.kill(adopted["pid"], signal.SIGTERM)' in source
 
 
 def test_the_dashboard_does_not_use_reload(cell_source):
