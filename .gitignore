@@ -21,6 +21,12 @@ node_modules/
 # dev store, so they are no more committable than it is.
 backups/
 
+# Exports written by section 6 of the notebook and by `cli.py export`. One row per
+# URL with the query text denormalized onto every one of them -- the same record
+# the dev store is ignored for, in the format that travels furthest.
+data/exports/
+*.csv
+
 # Terraform — state can carry resource metadata and must not be committed
 .terraform/
 .terraform.lock.hcl
