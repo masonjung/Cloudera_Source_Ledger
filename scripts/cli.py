@@ -30,7 +30,6 @@ tool that crashes on its own success message is not a tool.
 """
 
 import argparse
-import csv
 import json
 import sys
 from pathlib import Path
@@ -44,6 +43,7 @@ sys.path.insert(0, str(ROOT / "scripts"))  # so `import doctor` resolves when th
 import backup  # noqa: E402
 import db  # noqa: E402
 import doctor  # noqa: E402
+import present  # noqa: E402
 import record  # noqa: E402
 import urlvestigia  # noqa: E402
 
@@ -52,14 +52,14 @@ import urlvestigia  # noqa: E402
 # dashboard already renders that column as.
 ANY = "any"
 
-# One row per URL, provenance denormalized onto each. See `write_csv`.
-EXPORT_COLUMNS = ("search_id", "created_at", "query", "provider", "region",
-                  "safesearch", "timelimit", "backend", "max_results",
-                  "position", "url")
-
-# An export is a deliverable, not a preview, so it must not silently stop at the
-# 50 rows `db.list_searches()` defaults to.
-EXPORT_LIMIT = 1000
+# The export shape is a rule about the record, so it is owned in `data/`, beside
+# the writer whose columns it flattens — not re-implemented once per interface.
+# Re-exported under the names this module has always used, because they are what
+# `--format csv` is documented as producing.
+EXPORT_COLUMNS = present.EXPORT_COLUMNS
+EXPORT_LIMIT = present.EXPORT_LIMIT
+export_rows = present.export_rows
+write_csv = present.write_csv
 
 
 def err(message=""):
@@ -193,56 +193,6 @@ def cmd_stats(args):
 
 
 # --- export ----------------------------------------------------------------
-
-def export_rows(limit=EXPORT_LIMIT):
-    """The record flattened to one row per URL, oldest search first.
-
-    One row per URL rather than one per search, because the deliverable is "every
-    source, and how it was found": a reviewer opens it, sorts by domain, filters by
-    provider. A search-grained file with a nested URL list cannot be sorted by URL
-    at all, and unnesting it by hand is exactly the manual reconstruction this
-    accelerator exists to remove. It is also the grain `data/iceberg/ddl.sql`
-    curates into, so the CSV a reviewer reads and the table CDW holds are the same
-    shape.
-
-    `position` stays 0-based, as stored. Renumbering to 1-based here would make the
-    export a second source of truth for rank.
-    """
-    rows = []
-    for search in reversed(db.list_searches(limit=limit)):
-        for position, url in enumerate(search["urls"]):
-            rows.append({
-                "search_id": search["id"],
-                "created_at": search["created_at"],
-                "query": search["query"],
-                "provider": search["provider"],
-                "region": search["region"],
-                "safesearch": search["safesearch"],
-                "timelimit": search["timelimit"],
-                "backend": search["backend"],
-                "max_results": search["max_results"],
-                "position": position,
-                "url": url,
-            })
-    return rows
-
-
-def write_csv(rows, stream):
-    """CSV, with the one distinction CSV cannot make spelled out.
-
-    CSV has a single empty cell and this record has two meanings for it, so an
-    unsupported option is written as the literal NULL and an unused one is left
-    empty. JSON needs no such trick and is the faithful format; this is the
-    readable one.
-
-    lineterminator is pinned because csv defaults to \\r\\n and a Windows text
-    stream translates the \\n again, giving every row a blank line after it.
-    """
-    writer = csv.DictWriter(stream, fieldnames=EXPORT_COLUMNS, lineterminator="\n")
-    writer.writeheader()
-    for row in rows:
-        writer.writerow({k: ("NULL" if v is None else v) for k, v in row.items()})
-
 
 def write_json(rows, stream):
     json.dump(rows, stream, indent=2)

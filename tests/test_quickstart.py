@@ -72,18 +72,20 @@ def test_every_quickstart_cell_carries_an_id(quickstart):
 
 
 @pytest.mark.parametrize("writer", [
-    r"\bopen\s*\(",        # \b so subprocess.Popen( is not a false positive
+    r"\bopen\s*\(",        # \b so a name ending in "open(" is not a false positive
     r"\.write_text\s*\(",
     r"\.to_csv\s*\(",
     r"\.mkdir\s*\(",
     r"\bshutil\.",
 ])
 def test_the_notebook_writes_no_files(quickstart, writer):
-    """Run All must leave the working tree clean apart from the gitignored store.
+    """Run All must leave the working tree clean apart from what is gitignored.
 
-    The export cell prints the command that writes a file rather than writing one,
-    and the dashboard cell sends the server's output to DEVNULL rather than to a
-    log — so nothing here should be opening anything for writing.
+    Not a ban on writing — section 6 writes the appendix, and is the reason the
+    notebook exists. A ban on the notebook doing it: the store's path, the
+    export's path, and the directory it needs are `data/present.py`'s to decide,
+    so a cell that opens a file for itself has taken a decision back off the
+    module that is tested for it.
     """
     for cell in code_cells(quickstart):
         source = "".join(cell["source"])
@@ -122,7 +124,8 @@ def test_the_bootstrap_finds_the_root_from_any_working_directory(run_bootstrap, 
 
 
 def test_the_bootstrap_puts_every_layer_on_the_path(run_bootstrap):
-    """ROOT included, or `from app import hosting` fails in the dashboard cell."""
+    """ROOT included: the layers are directories rather than installed packages,
+    and `app` is a package, reached from the directory above it."""
     namespace = run_bootstrap(ROOT)
     layers = {str(ROOT / layer) for layer in ("retrieval", "data", "scripts")} | {str(ROOT)}
 
@@ -140,10 +143,10 @@ def test_the_bootstrap_fails_readably_outside_the_repository(run_bootstrap, tmp_
 
 # --- the cells that drive the modules --------------------------------------
 #
-# What each cell *does* is tested where the code lives: app/hosting.py for the
-# dashboard, data/present.py for the record, scripts/kernel.py for the installs.
-# What is left here is the wiring — that the cells still call those modules, and
-# still call them in the arrangement the prose around them promises.
+# What each cell *does* is tested where the code lives: data/present.py for the
+# record, scripts/kernel.py for the installs. What is left here is the wiring —
+# that the cells still call those modules, and still call them in the arrangement
+# the prose around them promises.
 
 @pytest.fixture(scope="module")
 def cell_source(quickstart):
@@ -153,30 +156,6 @@ def cell_source(quickstart):
                 return "".join(cell["source"])
         pytest.fail(f"quickstart.ipynb has no cell {cell_id!r}")
     return source
-
-
-def test_run_all_does_not_stop_the_dashboard_it_started(cell_source):
-    """Run All runs *every* cell, so a stop cell that acted unconditionally would
-    kill the server two cells after starting it and hand the reader a dead link."""
-    assert "STOP_DASHBOARD = False" in cell_source("stop")
-
-
-def test_the_dashboard_cell_keeps_its_handle_across_re_runs(cell_source):
-    """`hosting.dashboard()` decides whether to start one, but only if the cell
-    hands it what the last run left behind — otherwise every re-run looks like a
-    first run to it, and a second server races the first for the port."""
-    source = cell_source("dashboard")
-
-    assert 'hosting.dashboard(globals().get("DASHBOARD"), ROOT)' in source
-
-
-def test_the_stop_cell_can_stop_a_server_this_kernel_never_started(cell_source):
-    """hosting.stop() finds an adopted server by itself, so the cell must call it
-    even when it has no handle to pass — the usual case after a kernel restart."""
-    source = cell_source("stop")
-
-    assert "hosting.stop(DASHBOARD)" in source
-    assert "hosting.status(DASHBOARD)" in source
 
 
 def test_reading_the_record_is_not_gated_on_the_search_library(cell_source):

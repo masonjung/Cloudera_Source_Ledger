@@ -5,6 +5,7 @@ nothing that reads the store may write to it. Both are asserted here rather than
 trusted to the notebook cell that calls them, which is why they left the notebook.
 """
 
+import csv
 import sqlite3
 
 import present
@@ -104,3 +105,90 @@ def test_searches_is_newest_first(recorded):
     markup = present.searches(limit=10)
 
     assert markup.index("semaglutide") < markup.index("glp-1")
+
+
+# --- the record as a file ----------------------------------------------------
+#
+# The flattening moved here from scripts/cli.py, which still re-exports it: the
+# shape is a rule about the record, and a rule two interfaces each implement is a
+# rule until one of them drifts. tests/test_cli.py asserts the terminal surface;
+# these assert the rule itself.
+
+def test_export_writes_one_row_per_url_not_per_search(recorded, tmp_path):
+    """Three URLs across two searches is three rows. A search-grained file with a
+    nested URL list cannot be sorted by domain, which is the one thing a reviewer
+    opens it to do."""
+    path, rows = present.export(tmp_path / "appendix.csv")
+
+    assert len(rows) == 3
+    assert len(path.read_text(encoding="utf-8").strip().splitlines()) == 4  # + header
+
+
+def test_export_spells_null_out_because_csv_has_only_one_empty_cell(recorded, tmp_path):
+    """The distinction section 4 renders as n/a and any has to survive into the
+    file, or the export claims a filter that never ran."""
+    path, _ = present.export(tmp_path / "appendix.csv")
+    rows = list(csv.DictReader(path.open(encoding="utf-8")))
+
+    unsupported = next(r for r in rows if r["query"] == "semaglutide pharmacovigilance")
+    unused = next(r for r in rows if r["query"] == "glp-1 adverse events")
+
+    assert unsupported["region"] == "NULL"   # this corpus has no such option
+    assert unused["timelimit"] == ""         # it has one, and this search skipped it
+
+
+def test_export_carries_every_provenance_column(recorded, tmp_path):
+    """A column missing from the appendix is provenance the reviewer cannot check."""
+    path, _ = present.export(tmp_path / "appendix.csv")
+    header = next(csv.reader(path.open(encoding="utf-8")))
+
+    assert header == list(present.EXPORT_COLUMNS)
+
+
+def test_export_creates_the_directory_it_writes_into(recorded, tmp_path):
+    """data/exports/ is gitignored, so a fresh clone does not have it and the
+    first Run All would otherwise fail on the deliverable cell."""
+    path, _ = present.export(tmp_path / "never-made" / "appendix.csv")
+
+    assert path.is_file()
+
+
+def test_export_overwrites_rather_than_appends(recorded, tmp_path):
+    """Re-running a cell must leave the record as it stands now, not twice over."""
+    path, first = present.export(tmp_path / "appendix.csv")
+    _, second = present.export(tmp_path / "appendix.csv")
+
+    assert len(second) == len(first)
+    assert len(path.read_text(encoding="utf-8").strip().splitlines()) == len(first) + 1
+
+
+def test_export_defaults_under_data_not_the_working_directory():
+    """A notebook's cwd depends on how its kernel was started, so the default path
+    is pinned to the layer directory. Asserted on the path alone — this test must
+    not write into the developer's real data/exports/."""
+    assert present.EXPORTS == present.db.HERE / "exports"
+    assert present.EXPORTS.name == "exports"
+
+
+def test_export_does_not_stop_at_the_list_searches_default():
+    """`db.list_searches()` defaults to 50 rows because it backs a preview. An
+    export is a deliverable and silently truncating one is how an appendix ends up
+    missing the searches that mattered."""
+    assert present.EXPORT_LIMIT > 50
+
+
+def test_export_keeps_rank_as_stored(recorded, tmp_path):
+    """0-based, as the store has it. Renumbering here would make the export a
+    second source of truth for rank."""
+    path, _ = present.export(tmp_path / "appendix.csv")
+    rows = list(csv.DictReader(path.open(encoding="utf-8")))
+    positions = [r["position"] for r in rows if r["query"] == "semaglutide pharmacovigilance"]
+
+    assert positions == ["0", "1"]
+
+
+def test_head_shows_the_top_of_the_file(recorded, tmp_path):
+    path, _ = present.export(tmp_path / "appendix.csv")
+
+    assert present.head(path, lines=2) == \
+        path.read_text(encoding="utf-8").splitlines()[:2]

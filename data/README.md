@@ -21,8 +21,9 @@ is the bridge between the two.
 | `iceberg/ddl.sql` | Iceberg DDL for the platform tier: `raw_searches`, `raw_search_urls`, `curated_urls` |
 | `ingest/load_to_iceberg.py` | Loads the SQLite dev store into the raw Iceberg tables |
 | `backup.py` | Dated local snapshots of the dev store, safe to take while it runs |
-| `present.py` | Reading the record back for a human: read-only queries, and NULL kept distinct from unset |
+| `present.py` | Reading the record back for a human: read-only queries, the HTML table, and the CSV export — NULL kept distinct from unset in both |
 | `urlvestigia.db` | The database itself — **gitignored**, created on first run |
+| `exports/` | Deliverables `present.export()` writes, `review-appendix.csv` among them — **gitignored**, created on first export |
 
 ## One writer
 
@@ -37,6 +38,18 @@ and `quickstart.ipynb` all go through `record.save()`, which derives the NULL co
 from `urlvestigia.supports()` rather than from anything a caller passed. `record.py` is
 the only module in `data/` that imports from `retrieval/`, and that is why: the rule
 cannot be enforced without knowing which options were actually applied.
+
+## One export
+
+The same argument, one layer out. An export is not a dump: it flattens the record to
+one row per URL, keeps `position` 0-based as stored, and spells an unsupported option
+`NULL` because CSV has one empty cell and this record needs two meanings for it. Those
+are rules about the record, so `present.export()` owns them and `scripts/cli.py export`
+and section 6 of `quickstart.ipynb` both run it. It started in `cli.py`; a second copy
+in the notebook is what moved it here.
+
+`present.py` writes a deliverable and never the store — its connections are `mode=ro`,
+so it cannot become a second writer even by accident.
 
 ## The model
 

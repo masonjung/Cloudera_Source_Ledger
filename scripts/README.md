@@ -59,6 +59,11 @@ lakehouse curates into. In CSV, an unsupported option is written as the literal
 `NULL` and an unset one is left empty, because CSV has one empty cell and this record
 needs two meanings; JSON is the faithful format.
 
+That shape is a rule about the record rather than about this interface, so it lives in
+[`data/present.py`](../data/README.md) and `cli.py` re-exports it. `quickstart.ipynb`
+calls the same function, which is what makes the appendix byte-identical whichever of
+the two wrote it. The only thing `cli.py` still owns here is `--out` and `--format json`.
+
 ## Start a new accelerator
 
 ```bash

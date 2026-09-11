@@ -59,8 +59,8 @@ it belongs in `data/db.py`.
   process's pid, and when it loaded its code. A socket probe can only say that a
   port is taken — not whether what holds it is this dashboard, an unrelated
   application, or a dashboard a restarted kernel left behind still serving
-  pre-edit code. `quickstart.ipynb` tells those apart with this route, and stops
-  the last one with the pid. See [`app/hosting.py`](hosting.py).
+  pre-edit code. `hosting.identify()` tells those apart with this route, and the
+  pid it returns is what stops the last one. See [`app/hosting.py`](hosting.py).
 - **Whitelist every input.** `OPTIONS` in [`data/record.py`](../data/record.py) is
   the single source of truth for allowed `timelimit` / `backend` / `safesearch` /
   `region` values, re-exported here as `server.OPTIONS`; `record.normalize()`
@@ -87,8 +87,8 @@ every interface on the port the platform proxies (`CDSW_APP_PORT`) and is reache
 at a subdomain built from `CDSW_ENGINE_ID` and `CDSW_DOMAIN`. `hosting.py` decides
 which, and binds `0.0.0.0` **only** in a session — doing it on a laptop would put
 an app with no authentication and no CSRF protection on the local network.
-`quickstart.ipynb` starts the server through it; `make dev` is the laptop loop and
-stays on loopback with `--reload`.
+`app/server.py` binds through it; `make dev` is the laptop loop and stays on
+loopback with `--reload`.
 
 ## If you swap in a JavaScript front-end
 

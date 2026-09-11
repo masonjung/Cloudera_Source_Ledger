@@ -159,10 +159,11 @@ distinguish the cases a script has to tell apart: `0` results, `1` the search fa
 
 [`quickstart.ipynb`](quickstart.ipynb) is Run All, top to bottom, from a cold clone.
 It checks what this network reaches, picks a corpus that answered, runs a search,
-shows the record, previews the export — and then **starts the dashboard and prints
-the link**, so nothing above has to be repeated in a shell. It installs whatever the
+shows the record, queries it in SQL, and writes the export — every step in the
+notebook itself, so nothing has to be repeated in a shell. It installs whatever the
 kernel is missing as it goes, and a blocked network gets a named diagnosis rather
-than a traceback.
+than a traceback. The dashboard is the one thing it does not start; that is
+`make dev`, above.
 
 ```bash
 make install-notebook    # or: pip install -r requirements-notebook.txt
@@ -177,14 +178,14 @@ and Run All. 2 vCPU / 4 GiB is ample; there is no model here and no GPU is used.
 
 Two things differ from a laptop, and the notebook handles both:
 
-- **The link.** Your browser is outside the session container, so `127.0.0.1` would
-  point at your own machine. In a session the server binds every interface on
-  `CDSW_APP_PORT` and the notebook prints the proxied address instead. On a laptop
-  it stays on loopback, because this app has no authentication — see
-  [Prerequisites](#prerequisites). The rule is in [`app/hosting.py`](app/hosting.py).
-- **The record, without the dashboard.** Section 4 renders the store in the
-  notebook itself, read-only, so reading the record needs neither a reachable port
-  nor a browser — useful in a session where `CDSW_APP_PORT` is already spoken for.
+- **No port, no browser.** The notebook starts no server: section 4 renders the
+  store in the notebook itself, read-only, and section 6 writes the appendix — so a
+  session where `CDSW_APP_PORT` is already spoken for is no obstacle. The dashboard
+  is a separate process either way, deployed as a Cloudera AI Application or run
+  with `make dev`, and where it binds is decided in
+  [`app/hosting.py`](app/hosting.py): every interface in a session, where the
+  browser is outside the container, and loopback on a laptop, because this app has
+  no authentication — see [Prerequisites](#prerequisites).
 - **Egress.** A datacenter IP is the profile the public web engines block hardest, so
   the `ddgs` provider may return nothing from a session even though it works on a
   laptop. This is a measurement, not a defect: the preflight names which engines
@@ -284,7 +285,7 @@ explicit `--execute`. Design decisions and the request path in full:
 | `tests/` | Unit, data-quality, and retrieval-eval tiers |
 | `scripts/` | `cli.py` terminal interface, `doctor.py` preflight, `kernel.py` notebook installs, `new-accelerator.sh` scaffold |
 | `.github/` · `.gitlab/` | GitHub Actions, issue and merge-request templates |
-| `quickstart.ipynb` | Run All: preflight, one recorded search, the record, the export, and the dashboard |
+| `quickstart.ipynb` | Run All: preflight, one recorded search, the record in HTML and in SQL, and the export |
 | `requirements-notebook.txt` | Jupyter, kept out of `make install` |
 | `METADATA.yaml` | Catalog metadata for the Cloudera blueprint website |
 | `Makefile` | `make help` lists every target |

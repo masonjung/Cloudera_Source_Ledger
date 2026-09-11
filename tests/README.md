@@ -16,7 +16,7 @@ Nothing ships until this directory is green. `make test` is what the Harden gate
 | `test_hosting.py` | Serve | Where the app binds, which URL a reader is given, what is already on the port, and whether to reuse it, adopt it, or start one |
 | `test_cli.py` | Serve | The terminal interface: the same guarantees, plus exit codes, the stdout/stderr split, export grain, and ASCII output |
 | `test_quickstart.py` | Serve | `quickstart.ipynb` — the bootstrap resolving the repo from any working directory, the cells wired to the right modules, and both notebooks committed without outputs |
-| `test_present.py` | Ingest | Reading the record back: read-only access, NULL kept distinct from unset, and query text escaped |
+| `test_present.py` | Ingest | Reading the record back: read-only access, NULL kept distinct from unset, query text escaped, and the export's grain, rank and NULL spelling |
 | `test_kernel.py` | Serve | The notebook's installs: this interpreter's pip, a failure that names the fix, and an install that did not take |
 | `data_quality/test_url_normalization.py` | Process | URL normalisation — idempotence, what must collapse and what must stay distinct |
 | `data_quality/test_enrichment_sql.py` | Process | That `STAGE_SQL` and `curated_urls` stay column-aligned, since `INSERT *` binds positionally |
