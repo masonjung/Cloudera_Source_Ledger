@@ -24,14 +24,26 @@ which serves the code as it was when that kernel was alive, out of a process no
 later kernel holds a handle to. `held()`, `identify()` and `edited_since()` are how
 a caller tells those apart before printing a URL as though it were fresh.
 
+`dashboard()`, `stop()` and `status()` are the process itself, kept here rather
+than in the notebook that drives them: starting a server, deciding not to, and
+saying which — with the reason behind each — is this module's subject, and a
+notebook cell is a poor place for anything that has to be tested.
+
 Every value is read from the environment at call time rather than at import, so a
 notebook that sets one and re-runs a cell sees the change.
 """
 
+import atexit
+import html
 import json
 import os
+import signal
 import socket
+import subprocess
+import sys
+import time
 import urllib.request
+from datetime import datetime
 from pathlib import Path
 
 DEFAULT_PORT = 8000
@@ -163,3 +175,173 @@ def edited_since(when, root=ROOT):
             if edited > when:
                 changed.append((edited, path.relative_to(root).as_posix()))
     return [name for _, name in sorted(changed, reverse=True)]
+
+
+# --- the dashboard as a process --------------------------------------------
+
+UNREACHABLE = (
+    "This is a Cloudera AI session, but CDSW_ENGINE_ID and CDSW_DOMAIN are not "
+    "both set, so the proxied address cannot be derived here. The app is up and "
+    "bound correctly — open it with the session's own web UI access for this port.")
+
+
+def _p(text, style=""):
+    return f'<p style="margin:.25em 0;{style}">{html.escape(text)}</p>'
+
+
+class Dashboard:
+    """What is on the port, and what can be done about it.
+
+    `state` is one of:
+
+    * **started** — this call launched it.
+    * **mine** — a process the caller launched earlier, still alive.
+    * **adopted** — a dashboard on the port that something else started. No handle
+      to it survives a kernel restart; the pid it reports is the only one there is.
+    * **foreign** — something holds the port and will not say it is this app.
+    * **failed** — nothing came up, and `diagnose()` goes and asks why.
+    """
+
+    def __init__(self, process=None, server=None, state="failed", root=ROOT):
+        self.process = process
+        self.server = server      # the /healthz answer, when there is one
+        self.state = state
+        self.root = root
+
+    @property
+    def alive(self):
+        """A live handle beats a live port: a socket can still answer for a moment
+        after the server owning it was told to stop."""
+        return self.process is not None and self.process.poll() is None
+
+    def diagnose(self):
+        """Why nothing came up — almost always an import error in the Serve layer.
+
+        Asked for directly rather than left in the log that was sent to DEVNULL.
+        """
+        check = subprocess.run([sys.executable, "-c", "import app.server"],
+                               cwd=str(self.root), capture_output=True, text=True)
+        if check.returncode:
+            return check.stderr.strip()[-1000:]
+        return (f"It imports cleanly, so something else took port {port()} while it "
+                f"was starting. Start it by hand to see what it says:\n"
+                f"    {sys.executable} " + " ".join(uvicorn_argv()[1:]))
+
+    def report(self):
+        """The whole situation as HTML, for a notebook to display."""
+        if self.state == "failed":
+            return (_p(f"The dashboard did not come up on port {port()}.")
+                    + '<pre style="font-size:.85em;white-space:pre-wrap">'
+                    + html.escape(self.diagnose()) + "</pre>")
+
+        out = []
+        if self.state == "started":
+            out.append(_p("Dashboard started."))
+        elif self.state == "mine":
+            out.append(_p("Already running — started by this notebook earlier."))
+        elif self.state == "adopted":
+            loaded = datetime.fromtimestamp(self.server["started"]).strftime("%H:%M")
+            out.append(_p(f"Reusing the dashboard on this port — pid "
+                          f"{self.server['pid']}, serving the code as of {loaded}."))
+            out.append(_p("Started outside this kernel; the stop cell can still "
+                          "stop it.", "opacity:.7"))
+        else:
+            out.append(_p("Reusing the server already on this port."))
+            out.append(_p("It does not answer as this dashboard, so the link below "
+                          "may be something else.", "opacity:.7"))
+        out.append(_p(f"listening on {host()}:{port()}", "opacity:.7"))
+
+        stale = edited_since(self.server["started"]) if self.state == "adopted" else []
+        if stale:
+            more = f" (+{len(stale) - 1} more)" if len(stale) > 1 else ""
+            out.append(_p(f"{stale[0]}{more} changed after that server loaded its "
+                          "code, so this is not your current edit — stop it and "
+                          "re-run this cell.",
+                          "border-left:3px solid rgba(200,140,0,.8);padding-left:.6em"))
+
+        if reachable():
+            link = url()
+            out.append(f'<p style="font-size:1.1em;margin:.5em 0">&#127760; '
+                       f'<a href="{link}" target="_blank" rel="noopener">{link}</a></p>'
+                       + _p("Ctrl-click, or paste it into a browser.", "opacity:.7"))
+        else:
+            out.append(_p(UNREACHABLE, "opacity:.7"))
+        return "".join(out)
+
+
+def _launch(root, wait_s):
+    """Start uvicorn in the background and wait for it to bind the port.
+
+    Popen, not uvicorn.run(): the server has to outlive the cell that started it,
+    and a blocking call there would hang the kernel with no way to reach the
+    browser. No --reload either — the reloader serves from a grandchild process,
+    which survives terminate() and holds the port after the caller says it stopped.
+    """
+    process = subprocess.Popen([sys.executable, *uvicorn_argv()], cwd=str(root),
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    atexit.register(process.terminate)  # nothing outlives the kernel holding the port
+    deadline = time.monotonic() + wait_s
+    while time.monotonic() < deadline and process.poll() is None and not held():
+        time.sleep(0.25)
+    return process
+
+
+def dashboard(previous=None, root=ROOT, wait_s=25):
+    """Reuse, adopt, or start — in that order, and never fight for the port.
+
+    `previous` is whatever the caller's last run left behind, so re-running a cell
+    keeps the process it already has instead of spawning a second one.
+    """
+    if previous is not None and previous.alive:
+        return Dashboard(previous.process, identify(), "mine", root)
+    server = identify()
+    if server is not None:
+        return Dashboard(None, server, "adopted", root)
+    if held():
+        return Dashboard(None, None, "foreign", root)
+    process = _launch(root, wait_s)
+    return Dashboard(process, identify(), "started" if held() else "failed", root)
+
+
+def status(previous=None):
+    """One line on what is on the port, for a stop cell that was told not to."""
+    if (previous is not None and previous.alive) or identify() is not None:
+        return f"Still running at {url()}"
+    if held():
+        return f"Something is on port {port()}, but it does not answer as this app."
+    return f"Nothing is running on port {port()}."
+
+
+def stop(previous=None, timeout=10):
+    """Stop the dashboard, whoever started it. Returns what happened.
+
+    Never stops a process it cannot name: something holding the port without
+    answering as this app is somebody else's, and a notebook that kills unnamed
+    processes eventually kills the wrong one.
+    """
+    if previous is not None and previous.alive:
+        previous.process.terminate()
+        try:
+            previous.process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            previous.process.kill()
+        return "Dashboard stopped."
+
+    server = identify()
+    if server is not None:
+        # os.kill for want of a handle — the same SIGTERM, and on Windows the same
+        # TerminateProcess that Popen.terminate() calls.
+        os.kill(server["pid"], signal.SIGTERM)
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline and held():
+            time.sleep(0.25)
+        if held():
+            return (f"Sent SIGTERM to pid {server['pid']}, but port {port()} is still "
+                    "held — a --reload worker outlives the process asked to stop.")
+        return (f"Stopped the dashboard on port {port()} (pid {server['pid']}), "
+                "which was started outside this notebook.")
+
+    if held():
+        return (f"Whatever is on port {port()} does not answer as this app, so it is "
+                "left alone. Stop it where it was started.")
+    return "Nothing to stop."

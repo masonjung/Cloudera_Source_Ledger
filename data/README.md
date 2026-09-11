@@ -21,6 +21,7 @@ is the bridge between the two.
 | `iceberg/ddl.sql` | Iceberg DDL for the platform tier: `raw_searches`, `raw_search_urls`, `curated_urls` |
 | `ingest/load_to_iceberg.py` | Loads the SQLite dev store into the raw Iceberg tables |
 | `backup.py` | Dated local snapshots of the dev store, safe to take while it runs |
+| `present.py` | Reading the record back for a human: read-only queries, and NULL kept distinct from unset |
 | `urlvestigia.db` | The database itself — **gitignored**, created on first run |
 
 ## One writer
@@ -106,8 +107,10 @@ where retention and lineage apply. Neither replaces the other.
   that produced them. It does not fetch, cache, or persist the pages themselves.
   This is a governance commitment, not an implementation detail — see
   [`governance/DATA_CLASSIFICATION.md`](../governance/DATA_CLASSIFICATION.md).
-- **`db.py` owns every statement.** If SQL appears in `app/` or `retrieval/`, it is in the
-  wrong file.
+- **`db.py` owns every statement that writes.** If SQL appears in `app/` or
+  `retrieval/`, it is in the wrong file. `present.py` is the one other module with SQL
+  in it and cannot become a second writer by accident: it connects through a
+  `mode=ro` URI, so an UPDATE that reaches it raises.
 - **Deletes cascade.** `search_urls.search_id` is a `REFERENCES … ON DELETE CASCADE`
   foreign key and `db.py` enables `PRAGMA foreign_keys = ON` on every connection —
   SQLite ignores the constraint otherwise. Keep that pragma when adding connections.

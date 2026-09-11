@@ -10,6 +10,7 @@ Things you run by hand. Nothing here is part of the deployed accelerator.
 | `doctor.py` | Pre-demo preflight: probes every corpus and every engine, with timings |
 | `new-accelerator.sh` | Clones this repo into a fresh, re-pointed, git-initialised accelerator |
 | `example.py` | Smallest possible demo of the retrieval layer — text in, URLs out |
+| `kernel.py` | Installs a layer's requirements into the running kernel — what `quickstart.ipynb` opens with |
 
 ## Search from the terminal
 

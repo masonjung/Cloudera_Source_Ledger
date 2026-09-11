@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 _TMP_DB = Path(tempfile.gettempdir()) / "urlvestigia-pytest.db"
 os.environ["URLVESTIGIA_DB"] = str(_TMP_DB)
 
-for layer in ("retrieval", "data", "pipelines/jobs"):
+for layer in ("retrieval", "data", "pipelines/jobs", "scripts"):
     sys.path.insert(0, str(ROOT / layer))
 sys.path.insert(0, str(ROOT))  # so `import app.server` resolves
 

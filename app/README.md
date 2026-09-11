@@ -19,7 +19,7 @@ scripting off the form posts exactly as before. Reasoning in
 | Path | What it is |
 |---|---|
 | `server.py` | The FastAPI app: renders the page, handles form posts, validates every option against a whitelist |
-| `hosting.py` | Where to listen and where to send a browser — loopback locally, the proxied port in a Cloudera AI session |
+| `hosting.py` | Where to listen, where to send a browser, and what is already on the port — plus starting, adopting and stopping the process itself |
 | `templates/index.html` | The entire UI — one Jinja2 template: HTML, CSS, and one inline progressive-enhancement script |
 | `requirements.txt` | This layer's dependencies, pulling in `retrieval/` since `server.py` imports it |
 | `__init__.py` | Makes `app` importable so `uvicorn app.server:app` resolves |

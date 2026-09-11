@@ -182,6 +182,9 @@ Two things differ from a laptop, and the notebook handles both:
   `CDSW_APP_PORT` and the notebook prints the proxied address instead. On a laptop
   it stays on loopback, because this app has no authentication — see
   [Prerequisites](#prerequisites). The rule is in [`app/hosting.py`](app/hosting.py).
+- **The record, without the dashboard.** Section 4 renders the store in the
+  notebook itself, read-only, so reading the record needs neither a reachable port
+  nor a browser — useful in a session where `CDSW_APP_PORT` is already spoken for.
 - **Egress.** A datacenter IP is the profile the public web engines block hardest, so
   the `ddgs` provider may return nothing from a session even though it works on a
   laptop. This is a measurement, not a defect: the preflight names which engines
@@ -279,7 +282,7 @@ explicit `--execute`. Design decisions and the request path in full:
 | `governance/` | SDX policies, data classification, model card |
 | `docs/` | Extended documentation — architecture, business case, gates, worked example |
 | `tests/` | Unit, data-quality, and retrieval-eval tiers |
-| `scripts/` | `cli.py` terminal interface, `doctor.py` preflight, `new-accelerator.sh` scaffold |
+| `scripts/` | `cli.py` terminal interface, `doctor.py` preflight, `kernel.py` notebook installs, `new-accelerator.sh` scaffold |
 | `.github/` · `.gitlab/` | GitHub Actions, issue and merge-request templates |
 | `quickstart.ipynb` | Run All: preflight, one recorded search, the record, the export, and the dashboard |
 | `requirements-notebook.txt` | Jupyter, kept out of `make install` |

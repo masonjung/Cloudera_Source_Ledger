@@ -22,6 +22,10 @@ APP_DIR = Path(__file__).resolve().parent
 ROOT = APP_DIR.parent
 sys.path.insert(0, str(ROOT / "retrieval"))
 sys.path.insert(0, str(ROOT / "data"))
+# ROOT too, for `from app import hosting` below. Under `uvicorn app.server:app`
+# the working directory already provides it; run as a script — which is exactly
+# how a Cloudera AI Application starts this file — nothing does.
+sys.path.insert(0, str(ROOT))
 
 import backup
 import db
@@ -288,3 +292,15 @@ def dedupe():
 def clear():
     db.clear_all()
     return _redirect()
+
+
+if __name__ == "__main__":
+    # A Cloudera AI Application runs `python app/server.py` — see the
+    # `--script app/server.py` in .cicd/deploy.sh — not a uvicorn command line.
+    # Without this the platform would start the file, import it, define `app`,
+    # exit 0, and report a deployment that never listened on anything.
+    import uvicorn
+
+    # The same binding rule as everywhere else, and for the same reason: every
+    # interface only where a proxy has to reach us. app/hosting.py owns it.
+    uvicorn.run(app, host=hosting.host(), port=hosting.port())

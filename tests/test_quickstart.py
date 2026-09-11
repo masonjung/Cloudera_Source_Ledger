@@ -138,7 +138,12 @@ def test_the_bootstrap_fails_readably_outside_the_repository(run_bootstrap, tmp_
     assert "quickstart.ipynb" in str(exc_info.value)
 
 
-# --- the dashboard cells --------------------------------------------------
+# --- the cells that drive the modules --------------------------------------
+#
+# What each cell *does* is tested where the code lives: app/hosting.py for the
+# dashboard, data/present.py for the record, scripts/kernel.py for the installs.
+# What is left here is the wiring — that the cells still call those modules, and
+# still call them in the arrangement the prose around them promises.
 
 @pytest.fixture(scope="module")
 def cell_source(quickstart):
@@ -156,67 +161,32 @@ def test_run_all_does_not_stop_the_dashboard_it_started(cell_source):
     assert "STOP_DASHBOARD = False" in cell_source("stop")
 
 
-def test_the_dashboard_reuses_a_server_already_on_the_port(cell_source):
-    """VS Code's tasks.json starts uvicorn on folderOpen, so for this repo's own
-    developers a server on 8000 is the normal case, not the exception. Re-running
-    the cell must reuse it rather than fight it for the port.
-
-    The process handle is checked before the port because a socket can still answer
-    for a moment after the server owning it was told to stop.
-    """
+def test_the_dashboard_cell_keeps_its_handle_across_re_runs(cell_source):
+    """`hosting.dashboard()` decides whether to start one, but only if the cell
+    hands it what the last run left behind — otherwise every re-run looks like a
+    first run to it, and a second server races the first for the port."""
     source = cell_source("dashboard")
 
-    assert "starting = not mine and ADOPTED is None and not hosting.held()" in source
-    assert "DASHBOARD.poll()" in source
-    assert "atexit.register" in source  # no orphan holding the port after the kernel exits
+    assert 'hosting.dashboard(globals().get("DASHBOARD"), ROOT)' in source
 
 
-def test_the_dashboard_asks_what_is_on_the_port_not_only_whether_it_answers(cell_source):
-    """A dashboard left behind by a restarted kernel probes identically to a fresh
-    one and is the likeliest thing to be on the port when the notebook is re-run.
-    Reported as a plain "already running" it hands the reader a link to the code as
-    it was two edits ago, out of a process the notebook cannot stop."""
-    source = cell_source("dashboard")
-
-    assert "hosting.identify()" in source
-    assert "hosting.edited_since(" in source  # or a stale server goes unmentioned
-
-
-def test_the_stop_cell_can_stop_a_server_it_did_not_start(cell_source):
-    """Otherwise section 7's instruction is false in the one case it is most often
-    read in: the kernel that owned the process is gone, and the pid /healthz
-    reports is the only handle left."""
+def test_the_stop_cell_can_stop_a_server_this_kernel_never_started(cell_source):
+    """hosting.stop() finds an adopted server by itself, so the cell must call it
+    even when it has no handle to pass — the usual case after a kernel restart."""
     source = cell_source("stop")
 
-    assert "hosting.identify()" in source
-    assert 'os.kill(adopted["pid"], signal.SIGTERM)' in source
+    assert "hosting.stop(DASHBOARD)" in source
+    assert "hosting.status(DASHBOARD)" in source
 
 
-def test_the_dashboard_does_not_use_reload(cell_source):
-    """--reload runs the server in a grandchild process, which survives terminate()
-    and keeps the port after the notebook has said it stopped."""
-    source = cell_source("dashboard")
-
-    assert "uvicorn" in source
-    # As a string literal, i.e. actually passed as an argument. The cell's comment
-    # is allowed to say the word while explaining why it is not used.
-    assert '"--reload"' not in source
-    assert "'--reload'" not in source
+def test_reading_the_record_is_not_gated_on_the_search_library(cell_source):
+    """Reading needs no provider and no network — the point of keeping the record
+    in a file rather than behind a service. Gating this on READY would make an
+    offline read impossible for a reason that has nothing to do with it."""
+    assert "READY" not in cell_source("record")
 
 
-def test_the_notebook_installs_with_the_kernels_own_interpreter(cell_source):
-    """`pip` on PATH is frequently not this kernel's interpreter, and that mismatch
-    is the most common reason a "but I installed it" notebook still fails."""
-    source = cell_source("deps")
-
-    assert "sys.executable" in source
-    assert "importlib.invalidate_caches()" in source  # or the install stays invisible
-
-
-def test_the_bootstrap_needs_more_than_one_marker(run_bootstrap, tmp_path):
-    """scripts/new-accelerator.sh copies METADATA.yaml into a fresh accelerator, so
-    matching on it alone would resolve to the wrong repository."""
-    (tmp_path / "METADATA.yaml").write_text("name: not-urlvestigia\n", encoding="utf-8")
-
-    with pytest.raises(RuntimeError):
-        run_bootstrap(tmp_path)
+def test_the_record_is_rendered_through_present(cell_source):
+    """Not pandas, and not markup written in the cell: data/present.py is where
+    the NULL-is-not-unset rule survives into what the reader sees."""
+    assert "present.searches(" in cell_source("record")

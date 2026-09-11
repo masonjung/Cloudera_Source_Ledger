@@ -7,6 +7,8 @@ is actually responsible for: input validation, POST-redirect-GET, and rendering.
 import os
 import time
 
+from pathlib import Path
+
 import pytest
 import urlvestigia
 from app import hosting, server
@@ -541,3 +543,18 @@ def test_store_button_is_rendered(client):
 
     assert 'action="/store"' in body
     assert ">Store<" in body
+
+
+def test_running_the_module_as_a_script_starts_a_server():
+    """A Cloudera AI Application runs `python app/server.py` — the `--script` in
+    .cicd/deploy.sh — not a uvicorn command line. Without a __main__ block the
+    platform starts the file, imports it, exits 0, and reports a deployment that
+    never listened. Asserted against the source because the alternative is a test
+    that binds a port and never returns."""
+    source = Path(server.__file__).read_text(encoding="utf-8")
+
+    assert 'if __name__ == "__main__":' in source
+    assert "uvicorn.run(" in source
+    # The binding rule stays hosting.py's, here as everywhere else.
+    assert "host=hosting.host()" in source
+    assert "port=hosting.port()" in source
