@@ -1,7 +1,7 @@
 # Serve layer dependencies.
 #   pip install -r app/requirements.txt
 #
-# Pulls in the AI layer because server.py imports urlvestigia. Installing this file
+# Pulls in the AI layer because server.py imports source_ledger. Installing this file
 # therefore gives you everything needed to run the accelerator:
 #   make install  →  make dev
 #

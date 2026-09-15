@@ -1,11 +1,11 @@
-"""URLvestigia from the terminal — search, record, and read back the record.
+"""Source Ledger from the terminal — search, record, and read back the record.
 
 The dashboard is the interface for people who do not write code. This is the one
 for people who live in a shell: it writes the same rows, through the same writer
 (`data/record.py`), so a search recorded here is indistinguishable from one
 recorded by the app.
 
-    python scripts/cli.py search "GLP-1 receptor agonist adverse events"
+    python scripts/cli.py search "Cloudera AI inference service"
     python scripts/cli.py search "iceberg compaction" --provider arxiv -n 25
     python scripts/cli.py list --limit 5 --urls
     python scripts/cli.py export --format csv --out review-appendix.csv
@@ -45,7 +45,7 @@ import db  # noqa: E402
 import doctor  # noqa: E402
 import present  # noqa: E402
 import record  # noqa: E402
-import urlvestigia  # noqa: E402
+import source_ledger  # noqa: E402
 
 # The `timelimit` whitelist stores "supported, but not used" as "", which argparse
 # cannot offer as a choice. `any` is not a new vocabulary word: it is what the
@@ -76,8 +76,8 @@ def _report(text, opts, urls, search_id):
     it names the options this corpus ignored, so nobody has to infer from a stored
     NULL later that the filter they set never ran.
     """
-    supported = urlvestigia.supports(opts["provider"])
-    err("URLvestigia search")
+    supported = source_ledger.supports(opts["provider"])
+    err("Source Ledger search")
     err(f"  query        {text}")
     err(f"  provider     {record.label(opts['provider'])}")
 
@@ -112,7 +112,7 @@ def cmd_search(args):
         # dashboard does it the long way: both failure branches below need the
         # normalized options in order to name what was asked.
         urls = record.search(text, opts)
-    except urlvestigia.EngineError as exc:
+    except source_ledger.EngineError as exc:
         # Every engine failed and each said why. Named individually, because "the
         # search failed" and "yandex is blocked from this office" are different
         # problems with different fixes.

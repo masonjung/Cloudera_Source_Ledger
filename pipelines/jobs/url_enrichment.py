@@ -1,12 +1,11 @@
 """Process layer — normalise, deduplicate, and enrich raw search URLs.
 
-Reads `urlvestigia.raw_search_urls` + `urlvestigia.raw_searches`, and MERGEs one row per
-distinct URL into `urlvestigia.curated_urls`. This is the lakehouse form of what
+Reads `source_ledger.raw_search_urls` + `source_ledger.raw_searches`, and MERGEs one row per
+distinct URL into `source_ledger.curated_urls`. This is the lakehouse form of what
 `db.dedupe_urls()` does locally: keep one record per URL, remember the earliest
 sighting, drop the rest.
 
-    python pipelines/jobs/url_enrichment.py                # print the plan and SQL
-    python pipelines/jobs/url_enrichment.py --execute      # run it (needs Spark)
+    python pipelines/jobs/url_enrichment.py                # runs it (needs Spark)
 
 The normalisation helpers below are deliberately pure Python with no Spark
 dependency, so `tests/data_quality/` can exercise them on a laptop. Everything
@@ -76,8 +75,8 @@ def url_parts(url):
     return (host or None), tld, (parts.scheme.lower() or None)
 
 
-# The MERGE is expressed as SQL rather than a DataFrame write so the dry run can
-# print exactly what will execute — no hidden plan.
+# The MERGE is expressed as SQL rather than a DataFrame write so the statement
+# that runs is the statement you can read here — no hidden plan.
 #
 # Every SET below is idempotent: LEAST/GREATEST for the bounds, array_distinct for
 # the collections, and `times_seen` derived from the deduplicated `search_ids`
@@ -143,15 +142,15 @@ def run(args):
         from pyspark.sql.types import StringType, StructField, StructType
     except ImportError:
         raise SystemExit(
-            "--execute needs pyspark. Submit this through Cloudera Data Engineering "
+            "This job needs pyspark. Submit it through Cloudera Data Engineering "
             "(see pipelines/cde/url_enrichment.job.yaml) or run it from a Cloudera AI "
-            "session. Drop --execute to see the plan."
+            "session."
         )
 
     prefix = f"{args.catalog}.{args.database}" if args.catalog else args.database
     spark = (
         SparkSession.builder
-        .appName("urlvestigia-url-enrichment")
+        .appName("source-ledger-url-enrichment")
         .config("spark.sql.extensions",
                 "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
         .getOrCreate()
@@ -192,45 +191,23 @@ def run(args):
     spark.stop()
 
 
-def print_plan(args):
-    """Print what --execute would do, including the literal MERGE statement."""
-    prefix = f"{args.catalog}.{args.database}" if args.catalog else args.database
-    # Printed output stays ASCII: this runs on a Windows console where the
-    # default cp1252 codec raises on characters like U+2192.
-    print(f"URLvestigia url_enrichment -- DRY RUN (no writes)\n{'=' * 52}")
-    print(f"read   {prefix}.raw_search_urls  (joined to raw_searches on search_id)")
-    print(f"write  {prefix}.curated_urls     (MERGE on url)")
-    print(f"since  {args.since or '(none - full rebuild)'}\n")
-    print("transform")
-    print("  1. normalize_url()  lowercase host, strip www./tracking params/fragment")
-    print("  2. url_parts()      derive domain, tld, scheme")
-    print("  3. group by url     first_seen, last_seen, times_seen, best_position")
-    print("  4. collect          search_ids, providers (every corpus that found it)\n")
-
-    sample = "https://WWW.Example.com/Docs/?utm_source=news&topic=iceberg#intro"
-    print(f"normalisation sample\n  in   {sample}\n  out  {normalize_url(sample)}\n")
-    print("staging query:" + STAGE_SQL)
-    print("merge:" + MERGE_SQL.format(prefix=prefix))
-    print("Re-run with --execute to apply.")
-
-
-def main(argv=None):
+def build_parser():
+    """The CLI contract. Separate from main() so a test can exercise it
+    without running the job -- pipelines/cde/url_enrichment.job.yaml
+    hard-codes the args CDE passes, and nothing else checks they agree."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--catalog", default="spark_catalog",
                         help="Iceberg catalog name (default: spark_catalog)")
-    parser.add_argument("--database", default="urlvestigia",
-                        help="Target database (default: urlvestigia)")
+    parser.add_argument("--database", default="source_ledger",
+                        help="Target database (default: source_ledger)")
     parser.add_argument("--since", default="",
                         help="Only process rows with created_at greater than this "
                              "ISO-8601 UTC timestamp. Omit for a full rebuild.")
-    parser.add_argument("--execute", action="store_true",
-                        help="Actually run it. Without it, print the plan and exit.")
-    args = parser.parse_args(argv)
+    return parser
 
-    if args.execute:
-        run(args)
-    else:
-        print_plan(args)
+
+def main(argv=None):
+    run(build_parser().parse_args(argv))
     return 0
 
 

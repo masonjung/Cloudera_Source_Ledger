@@ -13,7 +13,7 @@ rather than three copies that agree until one of them drifts.
 
 **This module reaches up to retrieval/, which nothing else in data/ does.** The
 inversion is deliberate and it is the point: the NULL rule is unenforceable
-without `urlvestigia.supports()`, so the layer that owns the contract has to be
+without `source_ledger.supports()`, so the layer that owns the contract has to be
 able to ask which options a provider actually applied. It imports the support
 matrix and the search entry point, and nothing else.
 """
@@ -23,15 +23,15 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))                       # db
-sys.path.insert(0, str(HERE.parent / "retrieval"))  # urlvestigia
+sys.path.insert(0, str(HERE.parent / "retrieval"))  # source_ledger
 
 import db  # noqa: E402
-import urlvestigia  # noqa: E402
+import source_ledger  # noqa: E402
 
 # Allowed values per search option; first entry is the default fallback.
 #
 # `provider` currently offers every corpus retrieval/ implements, but it stays a
-# whitelist rather than a mirror of urlvestigia.REGISTRY — the two are allowed to
+# whitelist rather than a mirror of source_ledger.REGISTRY — the two are allowed to
 # diverge. Anything not listed here is coerced back to the default by pick(), so
 # a provider withheld from the UI cannot be reached by posting it by hand either.
 # (The CLI declines rather than coerces — see scripts/cli.py for why a typed
@@ -120,7 +120,7 @@ def search(text, options):
     and the CLI into a stderr line and an exit code; both want the exception, not a
     sentinel that loses which engine said what.
     """
-    return urlvestigia.text_to_urls(
+    return source_ledger.text_to_urls(
         text,
         provider=options["provider"],
         max_results=options["max_results"],
@@ -141,7 +141,7 @@ def save(text, urls, options):
     support matrix rather than a hand-written list, so a fifth provider — or a
     fifth option — is covered by being added in one place.
     """
-    supported = urlvestigia.supports(options["provider"])
+    supported = source_ledger.supports(options["provider"])
     return db.save_search(
         text, urls,
         provider=options["provider"],

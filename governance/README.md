@@ -9,12 +9,12 @@ component, and how the data is classified.
 | Path | What it is |
 |---|---|
 | `DATA_CLASSIFICATION.md` | Field-by-field classification, third-party disclosure, retention. **Read this first.** |
-| `model_cards/urlvestigia-retrieval.md` | Model card for the retrieval component — intended use, limitations, evaluation |
+| `model_cards/source-ledger-retrieval.md` | Model card for the retrieval component — intended use, limitations, evaluation |
 | `sdx/ranger-policies.json` | Ranger access, masking, and row-filter policies, plus Atlas classifications |
 
 ## The shape of the problem
 
-URLvestigia has exactly **one sensitive column**: `raw_searches.query`, the free text a
+Source Ledger has exactly **one sensitive column**: `raw_searches.query`, the free text a
 user typed. Everything else is public web addresses or configuration.
 
 That single fact drives the whole policy set. Analysts get the URL tables outright;
@@ -35,7 +35,7 @@ make govern                 # dry-run: prints what would be imported
 ```
 
 `${CDP_ENV}` and the group names are placeholders — repoint them to the customer's
-IdP groups before importing. The `urlvestigia_analysts` / `urlvestigia_data_engineers` names are
+IdP groups before importing. The `source_ledger_analysts` / `source_ledger_data_engineers` names are
 illustrative, not real.
 
 ## Conventions

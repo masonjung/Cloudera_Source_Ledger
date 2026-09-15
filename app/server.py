@@ -1,4 +1,4 @@
-"""URLvestigia Serve layer — everything is rendered server-side; no build step.
+"""Source Ledger Serve layer — everything is rendered server-side; no build step.
 
 The template carries one inline progressive-enhancement script for the Search
 button's in-flight state. Nothing here depends on it: with scripting off every
@@ -30,14 +30,14 @@ sys.path.insert(0, str(ROOT))
 import backup
 import db
 import record
-import urlvestigia
+import source_ledger
 from app import hosting
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.background import BackgroundTask
 
-app = FastAPI(title="URLvestigia")
+app = FastAPI(title="Source Ledger")
 # When this process loaded its code, which is not the same as when it started
 # answering and is exactly what /healthz is asked for. See that route.
 STARTED = time.time()
@@ -50,7 +50,7 @@ db.init_db()
 # redirect, so a failure a colleague reports as "it said search failed" has a
 # stack trace waiting on the server console. Uvicorn configures the root handler;
 # nothing here needs its own.
-log = logging.getLogger("urlvestigia.serve")
+log = logging.getLogger("source_ledger.serve")
 
 # The whitelists and labels the routes below enforce. They are defined in
 # data/record.py, not here, because the dashboard is no longer the only thing that
@@ -75,7 +75,7 @@ def _providers():
         "id": name,
         "label": PROVIDER_LABELS.get(name, name),
         "unsupported": [opt for opt in TOGGLEABLE
-                        if opt not in urlvestigia.supports(name)],
+                        if opt not in source_ledger.supports(name)],
     } for name in OPTIONS["provider"]]
 
 
@@ -93,7 +93,7 @@ def _when(iso):
 def _rel(path):
     """Repo-relative when the path is inside the repo, absolute when it is not.
 
-    `URLVESTIGIA_DB` and `URLVESTIGIA_BACKUP_DIR` can both point anywhere, so neither label
+    `SOURCE_LEDGER_DB` and `SOURCE_LEDGER_BACKUP_DIR` can both point anywhere, so neither label
     can assume it is showing something under ROOT.
     """
     try:
@@ -164,7 +164,7 @@ def search(
         # Every option is passed; text_to_urls drops the ones this provider does
         # not apply, reading the same matrix record.save() reads.
         urls = record.search(text, opts)
-    except urlvestigia.EngineError as exc:
+    except source_ledger.EngineError as exc:
         log.warning("%s search failed: every engine errored (%s) for %r",
                     provider, exc, text)
         # Every engine failed and each said why. ddgs reports this as an empty
@@ -249,7 +249,7 @@ def download():
     reason that function documents — the app holds the database open, so shipping
     the live file could transmit a torn page.
     """
-    tmp_dir = Path(tempfile.mkdtemp(prefix="urlvestigia-download-"))
+    tmp_dir = Path(tempfile.mkdtemp(prefix="source-ledger-download-"))
     cleanup = BackgroundTask(shutil.rmtree, tmp_dir, ignore_errors=True)
     try:
         snapshot = db.backup(tmp_dir / backup.default_name())

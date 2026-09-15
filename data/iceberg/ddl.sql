@@ -1,25 +1,25 @@
--- URLvestigia — Iceberg DDL for the Lakehouse layer.
+-- Source Ledger — Iceberg DDL for the Lakehouse layer.
 --
 -- Mirrors the SQLite dev schema in ../schema.sql, plus the curated table that
 -- pipelines/jobs/url_enrichment.py writes.
 --
 -- Apply with Spark SQL against the CDP catalog:
---   spark-sql --conf spark.sql.catalog.urlvestigia=org.apache.iceberg.spark.SparkCatalog \
+--   spark-sql --conf spark.sql.catalog.source_ledger=org.apache.iceberg.spark.SparkCatalog \
 --             -f data/iceberg/ddl.sql
 --
 -- ${CATALOG} defaults to spark_catalog on CDW; substitute at submit time.
 -- Every statement is IF NOT EXISTS so this file is safe to re-run — it is the
 -- authoritative schema, not a one-shot script.
 
-CREATE DATABASE IF NOT EXISTS urlvestigia
-COMMENT 'URLvestigia accelerator — search queries and the URLs they returned';
+CREATE DATABASE IF NOT EXISTS source_ledger
+COMMENT 'Source Ledger accelerator — search queries and the URLs they returned';
 
 -- ---------------------------------------------------------------------------
 -- Raw layer — a faithful copy of what the AI layer returned. Never edited in
 -- place; corrections land as new rows so retrieval behaviour stays auditable.
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS urlvestigia.raw_searches (
+CREATE TABLE IF NOT EXISTS source_ledger.raw_searches (
     search_id     BIGINT   COMMENT 'Matches searches.id in the SQLite dev store',
     query         STRING   COMMENT 'The natural-language text the user submitted',
     created_at    TIMESTAMP COMMENT 'UTC. Source of truth for partitioning.',
@@ -43,7 +43,7 @@ TBLPROPERTIES (
     'history.expire.max-snapshot-age-ms' = '604800000'
 );
 
-CREATE TABLE IF NOT EXISTS urlvestigia.raw_search_urls (
+CREATE TABLE IF NOT EXISTS source_ledger.raw_search_urls (
     search_id     BIGINT   COMMENT 'FK to raw_searches.search_id',
     position      INT      COMMENT 'Rank order as returned by the engine, 0-based',
     url           STRING   COMMENT 'Result URL. Links only - never page content.',
@@ -69,7 +69,7 @@ TBLPROPERTIES (
 -- this table is queried by domain and joined on url, not scanned by day.
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS urlvestigia.curated_urls (
+CREATE TABLE IF NOT EXISTS source_ledger.curated_urls (
     url             STRING  COMMENT 'Normalised URL - lowercased host, tracking params stripped',
     domain          STRING  COMMENT 'Registrable host, e.g. docs.cloudera.com',
     tld             STRING  COMMENT 'Top-level domain, e.g. com',

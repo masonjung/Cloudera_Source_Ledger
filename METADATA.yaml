@@ -6,8 +6,8 @@
 # worse than a blank, because a reviewer reads it as filled in and follows it.
 
 # --- Identity ---
-name: "URLvestigia — Text to a Governed Table of URLs"
-slug: "urlvestigia"                          # URL-safe repo / catalog identifier
+name: "Source Ledger — Text to a Governed Table of URLs"
+slug: "source-ledger"                        # URL-safe repo / catalog identifier
 description: "Turn a natural-language question into a persisted, governed table of source URLs."
 reprise_link: ""                             # Public reprise link. Empty: no walkthrough has
                                              # been recorded. docs/EXAMPLE.md is the written
@@ -48,20 +48,20 @@ tags:
 # --- Relationships ---
 product_mapping:                             # TARGET integration, not exercised. Only the two AI
                                              # entries run today, and only locally; the CDE / CDW /
-                                             # SDX paths dry-run and stop. See "Status" and the
+                                             # SDX paths are unexercised. See "Status" and the
                                              # layer/state table under "Architecture / Software
                                              # Components" in README.md.
   - Cloudera AI Application                  # Serve — app/, FastAPI + Jinja2
-  - Cloudera AI Workbench                    # AI — retrieval/urlvestigia.py, text_to_urls()
+  - Cloudera AI Workbench                    # AI — retrieval/source_ledger.py, text_to_urls()
   - Cloudera Data Engineering                # Ingest + Process — data/ingest/, pipelines/
   - Cloudera Data Warehouse                  # Lakehouse — Iceberg on CDW / Data Lake
   - SDX                                      # Governance — Ranger policies, Atlas lineage
 
 model_dependencies: []                       # None, and stated as an empty list rather than an
                                              # omitted field so the catalog records the answer.
-                                             # URLvestigia has no weights, no embeddings, and no
+                                             # Source Ledger has no weights, no embeddings, and no
                                              # inference of its own -- it is a metasearch client;
-                                             # see governance/model_cards/urlvestigia-retrieval.md.
+                                             # see governance/model_cards/source-ledger-retrieval.md.
                                              # It does call third-party public endpoints (ddgs web
                                              # engines, Wikipedia, OpenAlex, arXiv), which is a
                                              # deployability constraint rather than a model

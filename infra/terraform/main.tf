@@ -1,4 +1,4 @@
-# URLvestigia — CDP stack as code.
+# Source Ledger — CDP stack as code.
 #
 # The declarative equivalent of infra/cdp/provision.sh. Use whichever fits the
 # customer: the shell script is easier to read in a workshop, Terraform is what
@@ -23,7 +23,7 @@ terraform {
   # State must not live on a laptop. Uncomment and point at the team's bucket
   # before anyone else runs this.
   # backend "s3" {
-  #   bucket = "urlvestigia-terraform-state"
+  #   bucket = "source-ledger-terraform-state"
   #   key    = "cdp/terraform.tfstate"
   #   region = "us-west-2"
   # }
@@ -42,7 +42,7 @@ locals {
 # --- Foundation ------------------------------------------------------------
 # Identity, storage, and SDX. Everything else attaches to this.
 
-resource "cdp_environments_aws_environment" "urlvestigia" {
+resource "cdp_environments_aws_environment" "source_ledger" {
   environment_name = var.env_name
   credential_name  = var.credential_name
   region           = var.region
@@ -58,9 +58,9 @@ resource "cdp_environments_aws_environment" "urlvestigia" {
   tags = var.tags
 }
 
-resource "cdp_datalake_aws_datalake" "urlvestigia" {
+resource "cdp_datalake_aws_datalake" "source_ledger" {
   datalake_name    = local.datalake_name
-  environment_name = cdp_environments_aws_environment.urlvestigia.environment_name
+  environment_name = cdp_environments_aws_environment.source_ledger.environment_name
   scale            = var.datalake_scale
 
   cloud_provider_configuration = {
@@ -73,9 +73,9 @@ resource "cdp_datalake_aws_datalake" "urlvestigia" {
 # --- Process layer ---------------------------------------------------------
 # Runs data/ingest/load_to_iceberg.py and pipelines/jobs/url_enrichment.py.
 
-resource "cdp_de_service" "urlvestigia" {
+resource "cdp_de_service" "source_ledger" {
   name        = local.cde_service
-  environment = cdp_environments_aws_environment.urlvestigia.environment_name
+  environment = cdp_environments_aws_environment.source_ledger.environment_name
 
   instance_type     = var.cde_instance_type
   minimum_instances = 0 # an idle cluster should cost nothing
@@ -87,12 +87,12 @@ resource "cdp_de_service" "urlvestigia" {
 
   # CDE cannot come up until SDX is ready, and the dependency is not implied by
   # any attribute reference above.
-  depends_on = [cdp_datalake_aws_datalake.urlvestigia]
+  depends_on = [cdp_datalake_aws_datalake.source_ledger]
 }
 
-resource "cdp_de_virtual_cluster" "urlvestigia" {
-  name       = "urlvestigia-vc"
-  cluster_id = cdp_de_service.urlvestigia.cluster_id
+resource "cdp_de_virtual_cluster" "source_ledger" {
+  name       = "source-ledger-vc"
+  cluster_id = cdp_de_service.source_ledger.cluster_id
 
   cpu_requests    = "4"
   memory_requests = "16Gi"
@@ -102,9 +102,9 @@ resource "cdp_de_virtual_cluster" "urlvestigia" {
 # --- AI + Serve layers -----------------------------------------------------
 # Hosts retrieval/notebooks/ as sessions and app/ as a long-running Application.
 
-resource "cdp_ml_workspace" "urlvestigia" {
+resource "cdp_ml_workspace" "source_ledger" {
   workspace_name   = local.ai_workbench
-  environment_name = cdp_environments_aws_environment.urlvestigia.environment_name
+  environment_name = cdp_environments_aws_environment.source_ledger.environment_name
 
   instance_type = var.ai_instance_type
   min_instances = 1
@@ -115,7 +115,7 @@ resource "cdp_ml_workspace" "urlvestigia" {
 
   tags = var.tags
 
-  depends_on = [cdp_datalake_aws_datalake.urlvestigia]
+  depends_on = [cdp_datalake_aws_datalake.source_ledger]
 }
 
 # --- Outputs ---------------------------------------------------------------
@@ -124,17 +124,17 @@ resource "cdp_ml_workspace" "urlvestigia" {
 
 output "environment_crn" {
   description = "CRN of the CDP environment."
-  value       = cdp_environments_aws_environment.urlvestigia.crn
+  value       = cdp_environments_aws_environment.source_ledger.crn
 }
 
 output "cde_virtual_cluster_id" {
   description = "Target for `cde job import` in .cicd/deploy.sh."
-  value       = cdp_de_virtual_cluster.urlvestigia.vc_id
+  value       = cdp_de_virtual_cluster.source_ledger.vc_id
 }
 
 output "ai_workbench_url" {
   description = "Where the Serve layer is published."
-  value       = cdp_ml_workspace.urlvestigia.workspace_url
+  value       = cdp_ml_workspace.source_ledger.workspace_url
 }
 
 output "iceberg_warehouse" {

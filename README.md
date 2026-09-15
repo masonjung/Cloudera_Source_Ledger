@@ -1,4 +1,4 @@
-# Cloudera Blueprint: URLvestigia
+# Cloudera Blueprint: Source Ledger
 
 **A governed URL table**
 
@@ -18,7 +18,7 @@
 
 ## Overview
 
-URLvestigia turns a natural-language question into a persisted, reviewable table of
+Source Ledger turns a natural-language question into a persisted, reviewable table of
 source URLs: ask a question, get ranked links, and keep the query, provider, engines,
 region, and time window that produced them — so a search becomes an artifact instead of
 an activity. It is for **researchers and analysts** who need discovery captured rather
@@ -31,7 +31,7 @@ one thin capability wired across all five layers of the standard stack (Ingest �
 Lakehouse → Process → AI → Serve), small enough to read in an afternoon, free to run
 with no API keys or accounts, and started on a laptop with one command — with
 **retrieval, Serve, and local SQLite storage complete and running today, and the CDP
-platform layers written against the same schema but dry-run only.**
+platform layers written against the same schema but never executed.**
 
 ## Demo
 
@@ -141,7 +141,7 @@ python -m pytest tests -q
 No server, no browser. The same governed rows, and URLs on stdout so they pipe:
 
 ```bash
-python scripts/cli.py search "GLP-1 receptor agonist adverse events" --provider openalex
+python scripts/cli.py search "Cloudera AI inference service" --provider openalex
 python scripts/cli.py search "iceberg compaction" --backend duckduckgo --timelimit y -n 25
 python scripts/cli.py list --urls
 python scripts/cli.py export --format csv --out review-appendix.csv
@@ -191,14 +191,14 @@ Two things differ from a laptop, and the notebook handles both:
   laptop. This is a measurement, not a defect: the preflight names which engines
   answered, and the notebook falls back to Wikipedia, OpenAlex, or arXiv — keyless
   APIs that do not block on IP reputation. See
-  [`governance/model_cards/urlvestigia-retrieval.md`](governance/model_cards/urlvestigia-retrieval.md).
+  [`governance/model_cards/source-ledger-retrieval.md`](governance/model_cards/source-ledger-retrieval.md).
 
 **As a library:**
 
 ```python
-from urlvestigia import text_to_urls
+from source_ledger import text_to_urls
 
-text_to_urls("best python web scraping libraries", max_results=10)
+text_to_urls("Cloudera AI Workbench model deployment", max_results=10)
 ```
 
 Options: `provider` (`"ddgs"` · `"wikipedia"` · `"openalex"` · `"arxiv"`),
@@ -239,9 +239,9 @@ flowchart LR
 | --- | --- | --- | --- |
 | Serve | FastAPI + Jinja2 dashboard, server-rendered | Cloudera AI Application | runs locally |
 | AI | `text_to_urls()` metasearch over four corpora | Cloudera AI Workbench | runs locally |
-| Ingest | SQLite → Iceberg loader | Cloudera Data Engineering | dry run only |
+| Ingest | SQLite → Iceberg loader | Cloudera Data Engineering | never executed |
 | Lakehouse | `raw_searches`, `raw_search_urls`, `curated_urls` | Iceberg on CDW | DDL never applied |
-| Process | URL normalisation and enrichment (Spark) | Cloudera Data Engineering | dry run only |
+| Process | URL normalisation and enrichment (Spark) | Cloudera Data Engineering | never executed |
 | Governance | Ranger policies, Atlas lineage, model card | SDX | never imported |
 
 **Dependencies and security review scope.** Runtime dependencies are FastAPI, Uvicorn,
@@ -251,8 +251,10 @@ public search engines plus the Wikipedia, OpenAlex, and arXiv APIs — search en
 only, never the result URLs themselves. Data at rest is a single SQLite file holding
 queries and links, never page content. Inbound, the Serve layer binds to localhost and
 carries no authentication today; read [Prerequisites](#prerequisites) before exposing
-it. Every platform target prints what it *would* do and changes nothing without an
-explicit `--execute`. Design decisions and the request path in full:
+it. `provision`, `deploy` and `govern` print what they *would* do and change nothing
+without an explicit `--execute`; the two Spark jobs (`make ingest`, `make pipelines`)
+have no such guard and submit work against whatever catalog they are pointed at.
+Design decisions and the request path in full:
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Target Audience
@@ -327,7 +329,7 @@ from measured load.
 - [`docs/GATES.md`](docs/GATES.md) — what "done" means at each of the six phases
 - [`governance/DATA_CLASSIFICATION.md`](governance/DATA_CLASSIFICATION.md) — retention
   and third-party disclosure
-- [`governance/model_cards/urlvestigia-retrieval.md`](governance/model_cards/urlvestigia-retrieval.md)
+- [`governance/model_cards/source-ledger-retrieval.md`](governance/model_cards/source-ledger-retrieval.md)
   — intended use, out of scope, known limitations
 - Every directory carries its own `README.md` explaining what goes there and which
   Cloudera tool automates it.

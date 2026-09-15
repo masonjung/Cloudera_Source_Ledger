@@ -4,7 +4,7 @@ Where search results land and where they live. Two storage tiers, same shape:
 
 | Tier | Store | Used by |
 |---|---|---|
-| **Local / dev** | SQLite, one file at `data/urlvestigia.db` | `app/server.py` via `db.py` — the default when you `make dev` |
+| **Local / dev** | SQLite, one file at `data/source_ledger.db` | `app/server.py` via `db.py` — the default when you `make dev` |
 | **Platform** | Apache Iceberg tables in the CDP lakehouse | `pipelines/`, BI tools, anything past a single node |
 
 SQLite is not a placeholder for Iceberg — it is the demo path. An accelerator has to
@@ -22,7 +22,7 @@ is the bridge between the two.
 | `ingest/load_to_iceberg.py` | Loads the SQLite dev store into the raw Iceberg tables |
 | `backup.py` | Dated local snapshots of the dev store, safe to take while it runs |
 | `present.py` | Reading the record back for a human: read-only queries, the HTML table, and the CSV export — NULL kept distinct from unset in both |
-| `urlvestigia.db` | The database itself — **gitignored**, created on first run |
+| `source_ledger.db` | The database itself — **gitignored**, created on first run |
 | `exports/` | Deliverables `present.export()` writes, `review-appendix.csv` among them — **gitignored**, created on first export |
 
 ## One writer
@@ -35,7 +35,7 @@ the difference between a search record and a search log.
 A contract three interfaces each re-implement is a contract until one of them
 drifts, so none of them call `db.save_search()` directly — the dashboard, `scripts/cli.py`,
 and `quickstart.ipynb` all go through `record.save()`, which derives the NULL columns
-from `urlvestigia.supports()` rather than from anything a caller passed. `record.py` is
+from `source_ledger.supports()` rather than from anything a caller passed. `record.py` is
 the only module in `data/` that imports from `retrieval/`, and that is why: the rule
 cannot be enforced without knowing which options were actually applied.
 
@@ -67,14 +67,14 @@ The Serve layer converts to local time for display only. Do not store local time
 ## Run it
 
 ```bash
-make ingest                                    # dry-run: prints the load plan and row counts
-python data/ingest/load_to_iceberg.py --execute   # real load, needs Spark + Iceberg catalog
+make ingest                                    # real load, needs Spark + Iceberg catalog
+python data/ingest/load_to_iceberg.py          # the same thing directly
 ```
 
-Move the dev database anywhere with the `URLVESTIGIA_DB` environment variable:
+Move the dev database anywhere with the `SOURCE_LEDGER_DB` environment variable:
 
 ```bash
-URLVESTIGIA_DB=/tmp/scratch.db make dev
+SOURCE_LEDGER_DB=/tmp/scratch.db make dev
 ```
 
 ## Backups
@@ -83,7 +83,7 @@ The dev store is gitignored and lives at one path, so without a second copy ever
 search you have run exists on exactly one disk.
 
 ```bash
-make backup                          # -> backups/urlvestigia-<utc>.db
+make backup                          # -> backups/source-ledger-<utc>.db
 make backup BACKUP_DIR=/d/archive    # anywhere else on this device
 python data/backup.py --dest x.db    # an exact filename
 ```
@@ -91,7 +91,7 @@ python data/backup.py --dest x.db    # an exact filename
 Or press **Store** in the app's `saved_searches` header, which posts to `/store` and
 calls the same `backup.snapshot()` the CLI does — so a snapshot taken from the button
 and one taken from the shell are the same artifact in the same place. Set
-`URLVESTIGIA_BACKUP_DIR` to point the button somewhere else, the way `URLVESTIGIA_DB` moves the
+`SOURCE_LEDGER_BACKUP_DIR` to point the button somewhere else, the way `SOURCE_LEDGER_DB` moves the
 store itself.
 
 Safe to run while `make dev` is serving. `db.backup()` uses SQLite's online
@@ -101,13 +101,13 @@ invisible until the backup is the only copy left.
 
 Snapshots are **never overwritten** — each run writes a new UTC-stamped name, and
 an existing destination is an error rather than a replacement. `backups/` is
-gitignored for the same reason `urlvestigia.db` is: it holds the same real query text.
+gitignored for the same reason `source_ledger.db` is: it holds the same real query text.
 
-To restore, stop the server and copy a snapshot back over `data/urlvestigia.db` — or
+To restore, stop the server and copy a snapshot back over `data/source_ledger.db` — or
 leave it where it is and point the app at it:
 
 ```bash
-URLVESTIGIA_DB=backups/urlvestigia-20260811-223521.db make dev
+SOURCE_LEDGER_DB=backups/source-ledger-20260811-223521.db make dev
 ```
 
 A backup is a *local* copy on this device, which is a different guarantee from
@@ -116,7 +116,7 @@ where retention and lineage apply. Neither replaces the other.
 
 ## Conventions
 
-- **Only links are stored, never page content.** URLvestigia records URLs and the query
+- **Only links are stored, never page content.** Source Ledger records URLs and the query
   that produced them. It does not fetch, cache, or persist the pages themselves.
   This is a governance commitment, not an implementation detail — see
   [`governance/DATA_CLASSIFICATION.md`](../governance/DATA_CLASSIFICATION.md).
@@ -138,7 +138,7 @@ where retention and lineage apply. Neither replaces the other.
 
 - **Ingest** — Cloudera **DataFlow** (NiFi) for continuous collection, or
   `ingest/load_to_iceberg.py` submitted as a **Cloudera Data Engineering** job for
-  scheduled batch loads. URLvestigia's volume is small enough that batch is the honest
+  scheduled batch loads. Source Ledger's volume is small enough that batch is the honest
   default; DataFlow earns its place when searches arrive from a live feed rather
   than a form.
 - **Lakehouse** — Iceberg tables on **CDW** / **CDP Data Lake** storage, created by

@@ -1,11 +1,11 @@
-# URLvestigia — Data classification
+# Source Ledger — Data classification
 
 What this accelerator stores, what it deliberately does not, and how each field is
 classified. This is the document a customer's data-protection reviewer reads first.
 
 ## The one-line commitment
 
-**URLvestigia stores links, never page content.** It records the query a user submitted
+**Source Ledger stores links, never page content.** It records the query a user submitted
 and the URLs a search engine returned. It does not fetch, render, cache, or persist
 the pages behind those URLs.
 
@@ -17,7 +17,7 @@ classification change and needs this document updated first.
 Since the provider seam was added, that claim needs one distinction drawn precisely.
 `retrieval/providers.py` does make outbound HTTP requests — to the Wikipedia, OpenAlex, and
 arXiv *metadata* APIs, through a single seam (`_get_json` / `_get_bytes`). Those
-responses contain snippets and abstracts. URLvestigia reads the URL out of each record and
+responses contain snippets and abstracts. Source Ledger reads the URL out of each record and
 discards everything else, exactly as it discards everything but `href` from a `ddgs`
 result. So the commitment is unchanged in substance — a search result's *description*
 is not the *page behind it*, and neither is stored — but the mechanism is no longer
@@ -45,7 +45,7 @@ leaving the URL tables readable.
 
 ## Personal data
 
-URLvestigia as shipped stores **no identity fields**: no user ID, no session ID, no IP
+Source Ledger as shipped stores **no identity fields**: no user ID, no session ID, no IP
 address, no authentication subject. A search cannot be attributed to a person from
 the data alone.
 
@@ -73,7 +73,7 @@ leaves the customer's environment**, whichever provider is selected.
 There is no API key and no account for any of them, so there is no contractual
 data-processing agreement, and their handling is governed by their own privacy
 policies rather than the customer's. For deployments where query text cannot leave
-the environment, URLvestigia is not appropriate without swapping `retrieval/providers.py` for an
+the environment, Source Ledger is not appropriate without swapping `retrieval/providers.py` for an
 internal index.
 
 The two rows differ in kind, and a reviewer should be told which one they are
@@ -86,17 +86,17 @@ Note that Yandex is operated from Russia. Some customers' data-residency rules
 exclude it outright; it is off by default in the UI and should stay off unless a
 customer explicitly enables it.
 
-### The `URLVESTIGIA_CONTACT` identifier
+### The `SOURCE_LEDGER_CONTACT` identifier
 
 Wikipedia, OpenAlex, and arXiv each ask callers to identify themselves — Wikipedia
 through a descriptive `User-Agent`, OpenAlex through a `mailto` that admits you to
-its faster "polite pool." URLvestigia sends the value of the `URLVESTIGIA_CONTACT` environment
+its faster "polite pool." Source Ledger sends the value of the `SOURCE_LEDGER_CONTACT` environment
 variable for both, and sends nothing when it is unset.
 
 This is a disclosure change, not a schema change: **nothing new is stored**, but an
 operator-chosen identifier is now attached to outbound queries. If that value is a
 personal address, queries become attributable to a person at the receiving end even
-though they remain unattributable in URLvestigia's own tables. Use a team or service
+though they remain unattributable in Source Ledger's own tables. Use a team or service
 address. Leaving it unset is supported and degrades to the anonymous rate-limit
 pool rather than failing.
 
@@ -104,14 +104,14 @@ pool rather than failing.
 
 | Store | Default retention | Mechanism |
 |---|---|---|
-| SQLite dev store (`data/urlvestigia.db`) | None — grows until cleared | `Clear all` in the UI, or delete the file |
+| SQLite dev store (`data/source_ledger.db`) | None — grows until cleared | `Clear all` in the UI, or delete the file |
 | `raw_searches`, `raw_search_urls` | 7 days of Iceberg snapshots | `history.expire.max-snapshot-age-ms` in `data/iceberg/ddl.sql` |
 | `curated_urls` | Indefinite | Aggregated public data, no expiry configured |
 
 Snapshot expiry governs *time travel*, not the rows themselves — expiring snapshots
 does not delete current data. **There is no row-level retention policy on
 `raw_searches` today.** A deployment with a query-retention requirement needs a
-scheduled `DELETE FROM urlvestigia.raw_searches WHERE created_at < …` job added to
+scheduled `DELETE FROM source_ledger.raw_searches WHERE created_at < …` job added to
 `pipelines/`; that is a known gap, not an oversight.
 
 ## Lineage
@@ -119,7 +119,7 @@ scheduled `DELETE FROM urlvestigia.raw_searches WHERE created_at < …` job adde
 Atlas captures lineage automatically for the Spark paths:
 
 ```
-search engines / metadata APIs → retrieval/providers.py → retrieval/urlvestigia.py → SQLite
+search engines / metadata APIs → retrieval/providers.py → retrieval/source_ledger.py → SQLite
     → data/ingest/load_to_iceberg.py → raw_searches / raw_search_urls
     → pipelines/jobs/url_enrichment.py → curated_urls
 ```

@@ -28,10 +28,11 @@ fixture error.
 
 **`test`** — `pytest tests -q`, the [Harden gate](../docs/GATES.md). Runs without
 `--live`: CI must never fail because a search provider is rate-limiting, or a red
-pipeline stops meaning "we broke something." Runs alongside `verify-jobs`, which
-dry-runs the artifacts that otherwise only execute on a cluster — the Spark job, the
-ingest loader, the Ranger JSON, both shell scripts. A syntax error surfaces here
-rather than at 02:30 in a scheduled job.
+pipeline stops meaning "we broke something." The Spark jobs are covered here too:
+`read_sqlite`, the column lists, and the CDE job definition's args checked against
+the job's own parser — so a flag removed from one side surfaces in review rather
+than at 02:30 in a scheduled job. Runs alongside `verify-jobs`, which parses the
+Ranger JSON and the three shell scripts.
 
 **`deploy`** — manual, `main` only, in three ordered steps.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# URLvestigia — one-time platform provisioning via the CDP CLI.
+# Source Ledger — one-time platform provisioning via the CDP CLI.
 #
 # Stands up everything the accelerator needs that is not application code:
 # a Data Lake, a CDE service + virtual cluster, an AI Workbench, and the Iceberg
@@ -21,13 +21,13 @@ EXECUTE=false
 # --- Configuration ---------------------------------------------------------
 # Override any of these from the environment; the defaults describe a small
 # demo footprint, not a production sizing.
-CDP_ENV="${CDP_ENV:-urlvestigia-dev}"
+CDP_ENV="${CDP_ENV:-source-ledger-dev}"
 CDP_REGION="${CDP_REGION:-us-west-2}"
-CDP_CREDENTIAL="${CDP_CREDENTIAL:-urlvestigia-cross-account}"
+CDP_CREDENTIAL="${CDP_CREDENTIAL:-source-ledger-cross-account}"
 DATALAKE_NAME="${DATALAKE_NAME:-${CDP_ENV}-dl}"
 DATALAKE_SCALE="${DATALAKE_SCALE:-LIGHT_DUTY}"
 CDE_SERVICE="${CDE_SERVICE:-${CDP_ENV}-cde}"
-CDE_VC="${CDE_VC:-urlvestigia-vc}"
+CDE_VC="${CDE_VC:-source-ledger-vc}"
 AI_WORKBENCH="${AI_WORKBENCH:-${CDP_ENV}-ai}"
 STORAGE_BASE="${STORAGE_BASE:-s3a://${CDP_ENV}}"
 
@@ -52,7 +52,7 @@ exists() {
 
 if ! $EXECUTE; then
   cat <<'BANNER'
-URLvestigia provisioning — DRY RUN
+Source Ledger provisioning — DRY RUN
 ============================
 No CDP resources will be created. Every command that would run is printed below.
 Re-run with --execute to provision for real.

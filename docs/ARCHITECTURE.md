@@ -1,4 +1,4 @@
-# URLvestigia — architecture
+# Source Ledger — architecture
 
 Natural-language text in, a governed table of URLs out. One capability, designed
 across all five layers of the reference stack.
@@ -6,7 +6,8 @@ across all five layers of the reference stack.
 **What runs and what does not.** The Serve, AI, and local-storage layers execute
 today. Everything platform-side — Iceberg, Spark, CDE, Ranger, and the CDP
 provisioning under `infra/` — is designed and committed but **has never been
-executed against a real environment**; those paths dry-run and stop. This document
+executed against a real environment**. The CDP provisioning and deploy scripts
+dry-run and stop; the two Spark jobs do not — they write on invocation. This document
 describes the intended architecture throughout, so read the state column below
 before treating any of it as deployed. See "Planned platform integration" in
 [`../README.md`](../README.md).
@@ -42,13 +43,13 @@ flowchart LR
 |---|---|---|---|---|
 | **Serve** | `app/` | FastAPI + Jinja2 dashboard | Cloudera AI Application | runs locally |
 | **AI** | `retrieval/` | `text_to_urls()` — metasearch retrieval | Cloudera AI Workbench | runs locally |
-| **Ingest** | `data/ingest/` | SQLite → Iceberg batch loader | Cloudera Data Engineering | dry run only |
+| **Ingest** | `data/ingest/` | SQLite → Iceberg batch loader | Cloudera Data Engineering | never executed |
 | **Lakehouse** | `data/iceberg/` | `raw_searches`, `raw_search_urls`, `curated_urls` | Iceberg on CDW / Data Lake | DDL never applied |
-| **Process** | `pipelines/` | URL normalisation and enrichment | Cloudera Data Engineering | dry run only |
+| **Process** | `pipelines/` | URL normalisation and enrichment | Cloudera Data Engineering | never executed |
 | **Governance** | `governance/` | Ranger policies, model card, classification | SDX | never imported |
 
 **On the AI layer's directory name.** The Forge standard calls this layer `ai/`, and
-URLvestigia deliberately does not. There is no model here and no inference: the layer is
+Source Ledger deliberately does not. There is no model here and no inference: the layer is
 keyword retrieval — a dispatch table, four HTTP clients, and an XML parser, on one
 dependency. A directory called `ai/` would claim a capability the code does not have,
 which is the same failure the support matrix in `retrieval/providers.py` exists to
@@ -64,7 +65,7 @@ A search is synchronous and touches three layers:
    whitelists every option against `OPTIONS`, clamps `max_results` to 1–50, and joins
    the checked engines into a fallback chain. `scripts/cli.py` and `quickstart.ipynb`
    enter here instead of at the route, through the same function.
-2. **Retrieval** — `urlvestigia.text_to_urls()` dispatches to the selected provider,
+2. **Retrieval** — `source_ledger.text_to_urls()` dispatches to the selected provider,
    dropping any option that provider does not apply. `ddgs` queries web engines
    concurrently and pools whichever results come back first; the others call one
    API. Returns URLs deduplicated, in rank order.
@@ -157,7 +158,7 @@ indefensible in a repo whose whole argument is that a search is a record.
 Three cases now separate, in descending order of evidence:
 
 - **An engine said why.** ddgs logs `Error in engine %s: %r` at INFO and then discards
-  the exception; `urlvestigia` listens for those records and raises `EngineError`
+  the exception; `source_ledger` listens for those records and raises `EngineError`
   carrying every `(engine, reason)` pair, which the Serve layer renders by name.
 - **No engine answered in time.** Engines that miss the `wait()` land in `not_done`
   and are dropped with no exception and no log — the slow-network failure, and the
@@ -228,7 +229,7 @@ remembered.
 ## Where the layering is tested
 
 The Serve layer holds no SQL and no retrieval logic; `data/db.py` holds every
-statement; `retrieval/urlvestigia.py` has no database and no HTTP handling. The check on that
+statement; `retrieval/source_ledger.py` has no database and no HTTP handling. The check on that
 claim is concrete: swapping the front-end for React should require no change in
 `retrieval/`, `data/`, `pipelines/`, or `governance/`.
 
@@ -243,14 +244,14 @@ claim is concrete: swapping the front-end for React should require no change in
   tomorrow returns different URLs. Every search persists its full option set and
   timestamp, so a result set is *explainable* even when it is not repeatable.
 - **Absence is not evidence.** Results are what a public engine ranked in the top N.
-  A missing URL does not mean the page does not exist. Never use URLvestigia output to
+  A missing URL does not mean the page does not exist. Never use Source Ledger output to
   conclude a document does not exist.
 - **SQLite serialises writes.** Fine for a demo, wrong for concurrent users. The
   Iceberg tier is the answer, and the ingest bridge is where that transition happens.
 
 ## Scale
 
-URLvestigia's volume is small — a search is a form post, not a stream. The sizing across
+Source Ledger's volume is small — a search is a form post, not a stream. The sizing across
 `infra/` and `pipelines/cde/` reflects that deliberately: CDE scales to zero between
 runs, executors are modest, enrichment is daily. **Raise these from measured spill,
 not from optimism.** The architecture that would change first if volume grew is

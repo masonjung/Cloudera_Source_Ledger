@@ -50,7 +50,7 @@ DEFAULT_PORT = 8000
 LOOPBACK = "127.0.0.1"
 ALL_INTERFACES = "0.0.0.0"  # noqa: S104 - deliberate, and only when hosted
 
-NAME = "urlvestigia"  # what /healthz answers with, so a link is recognised not guessed
+NAME = "source_ledger"  # what /healthz answers with, so a link is recognised not guessed
 ROOT = Path(__file__).resolve().parent.parent
 # The layers the Serve layer imports and renders. A change to any of them is a
 # change a running server has not picked up; the rest of the repo can move without

@@ -1,4 +1,4 @@
--- URLvestigia schema: one row per search in `searches`, one row per URL in `search_urls`.
+-- Source Ledger schema: one row per search in `searches`, one row per URL in `search_urls`.
 -- On the settings columns: NULL means the provider does not support that option,
 -- "" means it does and the user left it unset. Collapsing the two would record a
 -- filter that never ran.

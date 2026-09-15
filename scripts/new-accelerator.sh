@@ -51,7 +51,7 @@ NAME="cloudera-forge-${VERTICAL}-${USECASE}"
 DEST="${DEST_PARENT}/${NAME}"
 
 # Directories whose contents are this accelerator's worked example. The README.md
-# in each is the standard and is always kept; everything else is URLvestigia's own code.
+# in each is the standard and is always kept; everything else is Source Ledger's own code.
 EXAMPLE_DIRS=(retrieval app data pipelines governance infra tests)
 
 step() { printf '\n\033[1m▸ %s\033[0m\n' "$1"; }
@@ -90,7 +90,7 @@ else
 fi
 
 # --- 2. Clear the worked example -------------------------------------------
-# The new accelerator inherits the structure and the guidance, not URLvestigia's code.
+# The new accelerator inherits the structure and the guidance, not Source Ledger's code.
 step "2/5  Clear the worked example, keep every README.md"
 for dir in "${EXAMPLE_DIRS[@]}"; do
   if $DRY_RUN; then
@@ -100,15 +100,15 @@ for dir in "${EXAMPLE_DIRS[@]}"; do
   fi
 done
 # Both are this accelerator's own: example.py demonstrates text_to_urls(), and
-# doctor.py probes URLvestigia's four providers by name and imports the retrieval
+# doctor.py probes Source Ledger's four providers by name and imports the retrieval
 # modules step 2 just deleted. Left in place they would not run at all.
 run rm -f "${DEST}/scripts/example.py" "${DEST}/scripts/doctor.py"
 
 # --- 3. Re-point the name --------------------------------------------------
 step "3/5  Re-point the accelerator name"
 if $DRY_RUN; then
-  echo "    rewrite URLvestigia → ${NAME} across *.md, Makefile, .cicd/, .gitlab/"
-  echo "    rewrite urlvestigia-dev → ${VERTICAL}-${USECASE}-dev"
+  echo "    rewrite Source Ledger → ${NAME} across *.md, Makefile, .cicd/, .gitlab/"
+  echo "    rewrite source-ledger-dev → ${VERTICAL}-${USECASE}-dev"
 else
   # -print0/-0 so a path with a space cannot split the argument list.
   # No \b word boundaries below: that is a GNU extension, and BSD sed (the
@@ -119,14 +119,14 @@ else
        -o -name '*.sh' -o -name '*.tf' \) -print0 \
     | xargs -0 sed -i.bak \
         -e "s/cloudera-forge-<vertical>-<usecase>/${NAME}/g" \
-        -e "s/urlvestigia-dev/${VERTICAL}-${USECASE}-dev/g" \
-        -e "s/URLvestigia/${NAME}/g"
+        -e "s/source-ledger-dev/${VERTICAL}-${USECASE}-dev/g" \
+        -e "s/Source Ledger/${NAME}/g"
   find "$DEST" -name '*.bak' -delete
 fi
 
 # --- 4. A README and catalog metadata that say what to do next --------------
 # METADATA.yaml is rewritten rather than sed-re-pointed: the step above only
-# rewrites the *name*, and a catalog entry that inherited URLvestigia's slug,
+# rewrites the *name*, and a catalog entry that inherited Source Ledger's slug,
 # description, tags, and GitHub link while carrying a new name is worse than an
 # empty one — it looks filled in.
 step "4/5  Write a starting README and METADATA.yaml"

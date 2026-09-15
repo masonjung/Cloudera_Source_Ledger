@@ -11,7 +11,7 @@ the note in [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md#layer-by-layer).
 
 | Path | What it is |
 |---|---|
-| `urlvestigia.py` | The retrieval façade — dispatch, dedupe, and the `ddgs` path |
+| `source_ledger.py` | The retrieval façade — dispatch, dedupe, and the `ddgs` path |
 | `providers.py` | The support matrix, the one HTTP seam, and the Wikipedia / OpenAlex / arXiv providers |
 | `notebooks/eval.ipynb` | Coverage / overlap evaluation, run before changing defaults |
 | `requirements.txt` | One dependency: `ddgs`. No web framework, no database driver, no HTTP library. |
@@ -19,10 +19,10 @@ the note in [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md#layer-by-layer).
 ## The capability
 
 ```python
-from urlvestigia import text_to_urls
+from source_ledger import text_to_urls
 
 urls = text_to_urls(
-    "best python web scraping libraries",
+    "Cloudera AI Workbench model deployment",
     provider="ddgs",         # "ddgs" | "wikipedia" | "openalex" | "arxiv"
     max_results=10,
     region="wt-wt",          # locale: "us-en", "kr-kr", … or "wt-wt" worldwide
@@ -71,26 +71,26 @@ that mapping is the only thing that makes `region` meaningful for an encyclopedi
 `ko.wikipedia.org` is a different corpus, not a Korean ranking of the English one.
 The direct API also does not depend on scraping tolerance.
 
-### `URLVESTIGIA_CONTACT`
+### `SOURCE_LEDGER_CONTACT`
 
 Wikipedia, OpenAlex, and arXiv ask callers to identify themselves — Wikipedia via a
 descriptive `User-Agent`, OpenAlex via a `mailto` that admits you to its faster
-polite pool. Set `URLVESTIGIA_CONTACT` to a **team or service address**:
+polite pool. Set `SOURCE_LEDGER_CONTACT` to a **team or service address**:
 
 ```bash
-export URLVESTIGIA_CONTACT="data-platform@example.com"
+export SOURCE_LEDGER_CONTACT="data-platform@example.com"
 ```
 
 Not a key, not billed, and not required — unset degrades to the anonymous rate-limit
 pool rather than failing, so a fresh clone runs with nothing configured. Set it
 before running anything at volume, or throttling will look like a broken provider.
 It is an outbound identifier, so it is a disclosure consideration: see
-[`governance/DATA_CLASSIFICATION.md`](../governance/DATA_CLASSIFICATION.md#the-urlvestigia_contact-identifier).
+[`governance/DATA_CLASSIFICATION.md`](../governance/DATA_CLASSIFICATION.md#the-source_ledger_contact-identifier).
 
-### `URLVESTIGIA_DDGS_TIMEOUT`
+### `SOURCE_LEDGER_DDGS_TIMEOUT`
 
 Seconds the web provider spends on one search, default **12** — matched to
-`URLVESTIGIA_HTTP_TIMEOUT` so there is one number to reason about, not two.
+`SOURCE_LEDGER_HTTP_TIMEOUT` so there is one number to reason about, not two.
 
 This is not only a socket timeout. ddgs spends the same value as the window in which
 it collects from the engines it queried concurrently, and drops whatever has not
@@ -99,7 +99,7 @@ fatal on conference or hotel wifi, where every engine misses the window and the
 search returns nothing at all. Raise it on a slow or proxied network:
 
 ```bash
-export URLVESTIGIA_DDGS_TIMEOUT=25
+export SOURCE_LEDGER_DDGS_TIMEOUT=25
 ```
 
 Resolved at import, so set it before the process starts. An unparseable or

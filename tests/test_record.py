@@ -10,7 +10,7 @@ wrong columns fails here rather than in a governed table months later.
 
 import pytest
 import record
-import urlvestigia
+import source_ledger
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def fake_search(monkeypatch):
         return ["https://example.com/1", "https://example.com/2"]
 
     search.calls = []
-    monkeypatch.setattr(record.urlvestigia, "text_to_urls", search)
+    monkeypatch.setattr(record.source_ledger, "text_to_urls", search)
     return search
 
 
@@ -105,11 +105,11 @@ def test_search_passes_every_option_through(fake_search):
 def test_search_does_not_swallow_a_failure(monkeypatch):
     """Callers report; this layer must not turn an outage into an empty result."""
     def boom(text, **kwargs):
-        raise urlvestigia.EngineError([("duckduckgo", "HTTP 403")])
+        raise source_ledger.EngineError([("duckduckgo", "HTTP 403")])
 
-    monkeypatch.setattr(record.urlvestigia, "text_to_urls", boom)
+    monkeypatch.setattr(record.source_ledger, "text_to_urls", boom)
 
-    with pytest.raises(urlvestigia.EngineError):
+    with pytest.raises(source_ledger.EngineError):
         record.search("iceberg", record.normalize())
 
 
@@ -122,7 +122,7 @@ def test_save_writes_null_for_every_option_a_provider_does_not_apply(
 
     Every toggleable option is deliberately set to a real value, then each column
     is asserted NULL exactly when the provider does not support it. Reading the
-    expectation from `urlvestigia.supports()` rather than a copy means a provider
+    expectation from `source_ledger.supports()` rather than a copy means a provider
     whose support set changes is caught here.
     """
     options = record.normalize(
@@ -130,7 +130,7 @@ def test_save_writes_null_for_every_option_a_provider_does_not_apply(
         timelimit="w", backend=["yahoo"])
     record.save("iceberg", ["https://example.com/1"], options)
     row = temp_db.list_searches()[0]
-    supported = urlvestigia.supports(provider)
+    supported = source_ledger.supports(provider)
 
     assert row["provider"] == provider
     for name in record.TOGGLEABLE:
@@ -179,7 +179,7 @@ def test_run_with_store_false_searches_and_records_nothing(temp_db, fake_search)
 
 def test_run_saves_nothing_when_there_are_no_results(temp_db, monkeypatch):
     """A row with no URLs is not a search that happened."""
-    monkeypatch.setattr(record.urlvestigia, "text_to_urls", lambda text, **kw: [])
+    monkeypatch.setattr(record.source_ledger, "text_to_urls", lambda text, **kw: [])
     result = record.run("iceberg")
 
     assert result["urls"] == []
@@ -206,4 +206,4 @@ def test_every_offered_provider_is_implemented():
     """The whitelist may offer a subset of what retrieval/ implements, never a
     superset — offering a provider with no registry entry would silently search
     the web under another name."""
-    assert set(record.OPTIONS["provider"]) <= set(urlvestigia.REGISTRY)
+    assert set(record.OPTIONS["provider"]) <= set(source_ledger.REGISTRY)

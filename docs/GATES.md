@@ -48,7 +48,7 @@ score it.
       score.
 - [ ] **Weighted total ≥ 4.0 / 5** to advance
 - [ ] Can the data leave the customer's environment? **Answer this now.** It has
-      killed accelerators at Harden that were fine on every other axis — URLvestigia has a
+      killed accelerators at Harden that were fine on every other axis — Source Ledger has a
       real constraint here (see
       [`governance/DATA_CLASSIFICATION.md`](../governance/DATA_CLASSIFICATION.md#third-party-disclosure))
 - [ ] Owner assigned for Architect
@@ -135,7 +135,7 @@ had to ask you something, the gap is a documentation defect, not a training issu
 
 ---
 
-## Where URLvestigia stands
+## Where Source Ledger stands
 
 Honest status, not aspiration:
 
@@ -144,7 +144,7 @@ Honest status, not aspiration:
 | Discover | Cleared |
 | Qualify | Cleared |
 | Architect | Cleared — [`ARCHITECTURE.md`](ARCHITECTURE.md), [`BUSINESS_CASE.md`](BUSINESS_CASE.md) |
-| Build | Cleared for the web edge — app, retrieval, and SQLite storage all run (`make dev`, `make test`). The CDP platform layers are written and dry-run clean, awaiting an environment to connect to |
+| Build | Cleared for the web edge — app, retrieval, and SQLite storage all run (`make dev`, `make test`). The CDP platform layers are written and import clean, awaiting an environment to connect to |
 | **Harden** | Open — the suite is green and the capability is solid, but three items stand before this is served to anyone: no authentication or CSRF protection, no dated eval run on the model card, and `ingress_cidrs` at `0.0.0.0/0` |
 | Publish | Follows Harden |
 

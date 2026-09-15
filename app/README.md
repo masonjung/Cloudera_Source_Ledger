@@ -3,7 +3,7 @@
 The reference front-end. This is what a stakeholder actually opens, and the only
 layer with a UI.
 
-URLvestigia's Serve layer is **FastAPI + Jinja2, rendered entirely server-side with no
+Source Ledger's Serve layer is **FastAPI + Jinja2, rendered entirely server-side with no
 build step and no framework**. That is a deliberate choice, not a gap: the whole
 accelerator installs with `make install` and runs with one command, which keeps the
 Discover → Qualify demo loop short.
@@ -42,7 +42,7 @@ uvicorn app.server:app --reload           # same thing, without make
 
 ```
 app/server.py
-  ├── import urlvestigia   → retrieval/urlvestigia.py   (retrieval layer: text → ranked URLs)
+  ├── import source_ledger   → retrieval/source_ledger.py   (retrieval layer: text → ranked URLs)
   └── import db      → data/db.py           (Lakehouse layer: persist searches + URLs)
 ```
 

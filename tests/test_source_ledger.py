@@ -1,6 +1,6 @@
-"""AI layer — unit tests for `retrieval/urlvestigia.py`.
+"""AI layer — unit tests for `retrieval/source_ledger.py`.
 
-Every test stubs `DDGS`. These verify the contract URLvestigia guarantees about search
+Every test stubs `DDGS`. These verify the contract Source Ledger guarantees about search
 results, not whether a search engine is up.
 """
 
@@ -10,7 +10,7 @@ import logging
 import pytest
 from ddgs.exceptions import DDGSException
 
-import urlvestigia
+import source_ledger
 
 
 class FakeDDGS:
@@ -40,7 +40,7 @@ class FakeDDGS:
 def patched(monkeypatch):
     """Install a FakeDDGS returning `results`, and hand back the recorded call.
 
-    The constructor takes keyword arguments now — `urlvestigia` configures the client
+    The constructor takes keyword arguments now — `source_ledger` configures the client
     with a timeout and proxy — so the stand-in must accept and record them.
     """
 
@@ -49,7 +49,7 @@ def patched(monkeypatch):
             FakeDDGS.last_init = kwargs
             return FakeDDGS(results, raises, logs)
 
-        monkeypatch.setattr(urlvestigia, "DDGS", _factory)
+        monkeypatch.setattr(source_ledger, "DDGS", _factory)
         FakeDDGS.last_call = None
         FakeDDGS.last_init = None
         return FakeDDGS
@@ -59,7 +59,7 @@ def patched(monkeypatch):
 
 def test_extracts_urls_in_rank_order(patched, fake_results):
     patched(fake_results)
-    urls = urlvestigia.text_to_urls("cloudera cdp")
+    urls = source_ledger.text_to_urls("cloudera cdp")
 
     assert urls[0] == "https://www.cloudera.com/products/cdp.html?utm_source=search"
     assert urls[1] == "https://docs.cloudera.com/cdp/latest/index.html"
@@ -72,14 +72,14 @@ def test_accepts_legacy_url_key(patched, fake_results):
     results — the failure mode that is indistinguishable from "no matches".
     """
     patched(fake_results)
-    urls = urlvestigia.text_to_urls("cloudera cdp")
+    urls = source_ledger.text_to_urls("cloudera cdp")
 
     assert "https://blog.cloudera.com/iceberg-in-cdp/" in urls
 
 
 def test_deduplicates_exact_repeats(patched, fake_results):
     patched(fake_results)
-    urls = urlvestigia.text_to_urls("cloudera cdp")
+    urls = source_ledger.text_to_urls("cloudera cdp")
 
     assert len(urls) == len(set(urls))
     assert len(urls) == 4  # five results, one exact repeat
@@ -89,13 +89,13 @@ def test_empty_text_short_circuits(patched):
     """Blank input must not reach a search engine at all."""
     patched([{"href": "https://example.com"}])
 
-    assert urlvestigia.text_to_urls("   ") == []
+    assert source_ledger.text_to_urls("   ") == []
     assert FakeDDGS.last_call is None
 
 
 def test_query_is_stripped(patched):
     patched([])
-    urlvestigia.text_to_urls("  cloudera cdp  ")
+    source_ledger.text_to_urls("  cloudera cdp  ")
 
     assert FakeDDGS.last_call["query"] == "cloudera cdp"
 
@@ -104,12 +104,12 @@ def test_no_results_returns_empty_list(patched):
     """A throttled engine returns nothing. That must be an empty list, not None."""
     patched(None)
 
-    assert urlvestigia.text_to_urls("anything") == []
+    assert source_ledger.text_to_urls("anything") == []
 
 
 def test_options_are_forwarded(patched):
     patched([])
-    urlvestigia.text_to_urls(
+    source_ledger.text_to_urls(
         "iceberg",
         max_results=25,
         region="kr-kr",
@@ -128,7 +128,7 @@ def test_options_are_forwarded(patched):
 def test_empty_timelimit_normalises_to_none(patched):
     """The Serve layer sends "" for "any time"; ddgs expects None."""
     patched([])
-    urlvestigia.text_to_urls("iceberg", timelimit="")
+    source_ledger.text_to_urls("iceberg", timelimit="")
 
     assert FakeDDGS.last_call["timelimit"] is None
 
@@ -140,7 +140,7 @@ def test_results_without_a_url_are_skipped(patched):
         {"href": "https://example.com/real"},
     ])
 
-    assert urlvestigia.text_to_urls("x") == ["https://example.com/real"]
+    assert source_ledger.text_to_urls("x") == ["https://example.com/real"]
 
 
 def test_engine_failure_propagates(patched):
@@ -149,7 +149,7 @@ def test_engine_failure_propagates(patched):
     patched(raises=RuntimeError("rate limited"))
 
     with pytest.raises(RuntimeError, match="rate limited"):
-        urlvestigia.text_to_urls("iceberg")
+        source_ledger.text_to_urls("iceberg")
 
 
 # --- client configuration ---------------------------------------------------
@@ -162,9 +162,9 @@ def test_engine_failure_propagates(patched):
 def test_timeout_and_proxy_reach_the_client(patched, monkeypatch):
     monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:8080")
     patched([])
-    urlvestigia.text_to_urls("iceberg")
+    source_ledger.text_to_urls("iceberg")
 
-    assert FakeDDGS.last_init["timeout"] == urlvestigia.DDGS_TIMEOUT_S
+    assert FakeDDGS.last_init["timeout"] == source_ledger.DDGS_TIMEOUT_S
     assert FakeDDGS.last_init["proxy"] == "http://proxy.example:8080"
 
 
@@ -173,7 +173,7 @@ def test_ddgs_proxy_wins_over_the_generic_one(patched, monkeypatch):
     monkeypatch.setenv("HTTPS_PROXY", "http://generic.example:8080")
     monkeypatch.setenv("DDGS_PROXY", "http://specific.example:8080")
     patched([])
-    urlvestigia.text_to_urls("iceberg")
+    source_ledger.text_to_urls("iceberg")
 
     assert FakeDDGS.last_init["proxy"] == "http://specific.example:8080"
 
@@ -182,23 +182,23 @@ def test_no_proxy_configured_passes_none(patched, monkeypatch):
     for name in ("DDGS_PROXY", "HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"):
         monkeypatch.delenv(name, raising=False)
     patched([])
-    urlvestigia.text_to_urls("iceberg")
+    source_ledger.text_to_urls("iceberg")
 
     assert FakeDDGS.last_init["proxy"] is None
 
 
 @pytest.mark.parametrize("value, expected", [
     ("30", 30.0),
-    ("not-a-number", urlvestigia.DDGS_TIMEOUT_DEFAULT_S),
-    ("0", urlvestigia.DDGS_TIMEOUT_DEFAULT_S),
-    ("-5", urlvestigia.DDGS_TIMEOUT_DEFAULT_S),
-    ("", urlvestigia.DDGS_TIMEOUT_DEFAULT_S),
+    ("not-a-number", source_ledger.DDGS_TIMEOUT_DEFAULT_S),
+    ("0", source_ledger.DDGS_TIMEOUT_DEFAULT_S),
+    ("-5", source_ledger.DDGS_TIMEOUT_DEFAULT_S),
+    ("", source_ledger.DDGS_TIMEOUT_DEFAULT_S),
 ])
 def test_timeout_env_is_parsed_or_falls_back(monkeypatch, value, expected):
     """A typo in a demo machine's environment must not take the app down at import."""
-    monkeypatch.setenv("URLVESTIGIA_DDGS_TIMEOUT", value)
+    monkeypatch.setenv("SOURCE_LEDGER_DDGS_TIMEOUT", value)
 
-    assert urlvestigia._ddgs_timeout() == expected
+    assert source_ledger._ddgs_timeout() == expected
 
 
 # --- engine breadth ---------------------------------------------------------
@@ -207,14 +207,14 @@ def test_asks_for_enough_results_to_query_every_engine(patched):
     """ddgs sizes its worker pool from `max_results`, so asking for the UI default of
     10 queries only two of the four selected engines. See _DDGS_MIN_REQUEST."""
     patched([])
-    urlvestigia.text_to_urls("iceberg", max_results=10)
+    source_ledger.text_to_urls("iceberg", max_results=10)
 
-    assert FakeDDGS.last_call["max_results"] == urlvestigia._DDGS_MIN_REQUEST
+    assert FakeDDGS.last_call["max_results"] == source_ledger._DDGS_MIN_REQUEST
 
 
 def test_a_larger_request_is_left_alone(patched):
     patched([])
-    urlvestigia.text_to_urls("iceberg", max_results=50)
+    source_ledger.text_to_urls("iceberg", max_results=50)
 
     assert FakeDDGS.last_call["max_results"] == 50
 
@@ -223,7 +223,7 @@ def test_caller_still_receives_only_max_results(patched):
     """The widened request must never widen what a caller gets back."""
     patched([{"href": f"https://example.com/{n}"} for n in range(40)])
 
-    assert len(urlvestigia.text_to_urls("iceberg", max_results=3)) == 3
+    assert len(source_ledger.text_to_urls("iceberg", max_results=3)) == 3
 
 
 # --- telling a blocked engine from an empty corpus --------------------------
@@ -236,8 +236,8 @@ def test_engine_errors_with_no_results_raise(patched):
     patched([], logs=[("duckduckgo", RuntimeError("HTTP 403")),
                       ("yahoo", TimeoutError("timed out"))])
 
-    with pytest.raises(urlvestigia.EngineError) as caught:
-        urlvestigia.text_to_urls("iceberg")
+    with pytest.raises(source_ledger.EngineError) as caught:
+        source_ledger.text_to_urls("iceberg")
 
     assert caught.value.failures == [("duckduckgo", "HTTP 403"),
                                      ("yahoo", "timed out")]
@@ -249,15 +249,15 @@ def test_engine_errors_raised_as_the_empty_exception_still_surface(patched):
     patched(raises=DDGSException("No results found."),
             logs=[("yandex", RuntimeError("blocked"))])
 
-    with pytest.raises(urlvestigia.EngineError):
-        urlvestigia.text_to_urls("iceberg")
+    with pytest.raises(source_ledger.EngineError):
+        source_ledger.text_to_urls("iceberg")
 
 
 def test_a_genuine_miss_is_still_an_empty_list(patched):
     """No engine complained, so nothing was wrong — the corpus simply had nothing."""
     patched(raises=DDGSException("No results found."))
 
-    assert urlvestigia.text_to_urls("iceberg") == []
+    assert source_ledger.text_to_urls("iceberg") == []
 
 
 def test_engine_errors_are_ignored_when_results_came_back(patched):
@@ -265,7 +265,7 @@ def test_engine_errors_are_ignored_when_results_came_back(patched):
     patched([{"href": "https://example.com/real"}],
             logs=[("yahoo", RuntimeError("HTTP 403"))])
 
-    assert urlvestigia.text_to_urls("iceberg") == ["https://example.com/real"]
+    assert source_ledger.text_to_urls("iceberg") == ["https://example.com/real"]
 
 
 # --- the silent slow-network failure ----------------------------------------
@@ -276,26 +276,26 @@ def test_engine_errors_are_ignored_when_results_came_back(patched):
 # that actually loses a demo, and it is the one ddgs helps with least.
 
 def test_an_empty_search_that_used_the_whole_window_is_a_failure(monkeypatch):
-    monkeypatch.setattr(urlvestigia, "DDGS_TIMEOUT_S", 10.0)
+    monkeypatch.setattr(source_ledger, "DDGS_TIMEOUT_S", 10.0)
 
-    with pytest.raises(urlvestigia.EngineError, match="no answer within 10s"):
-        urlvestigia._reject_empty([], elapsed=9.5)
+    with pytest.raises(source_ledger.EngineError, match="no answer within 10s"):
+        source_ledger._reject_empty([], elapsed=9.5)
 
 
 def test_an_empty_search_that_returned_promptly_is_a_miss(monkeypatch):
     """A corpus with nothing in it answers fast. Calling that a failure would put a
     red error next to a query that simply had no matches."""
-    monkeypatch.setattr(urlvestigia, "DDGS_TIMEOUT_S", 10.0)
+    monkeypatch.setattr(source_ledger, "DDGS_TIMEOUT_S", 10.0)
 
-    assert urlvestigia._reject_empty([], elapsed=0.4) is None
+    assert source_ledger._reject_empty([], elapsed=0.4) is None
 
 
 def test_a_named_engine_failure_beats_the_timing_heuristic(monkeypatch):
     """What an engine said about itself is always better evidence than the clock."""
-    monkeypatch.setattr(urlvestigia, "DDGS_TIMEOUT_S", 10.0)
+    monkeypatch.setattr(source_ledger, "DDGS_TIMEOUT_S", 10.0)
 
-    with pytest.raises(urlvestigia.EngineError) as caught:
-        urlvestigia._reject_empty([("yahoo", "HTTP 403")], elapsed=9.9)
+    with pytest.raises(source_ledger.EngineError) as caught:
+        source_ledger._reject_empty([("yahoo", "HTTP 403")], elapsed=9.9)
 
     assert caught.value.failures == [("yahoo", "HTTP 403")]
 
@@ -309,12 +309,12 @@ def test_a_slow_empty_search_surfaces_through_the_public_call(patched, monkeypat
     to be worth waiting for.
     """
     ticks = iter([100.0, 112.0])  # a search that consumed the full 12s window
-    monkeypatch.setattr(urlvestigia.time, "monotonic", lambda: next(ticks))
-    monkeypatch.setattr(urlvestigia, "DDGS_TIMEOUT_S", 12.0)
+    monkeypatch.setattr(source_ledger.time, "monotonic", lambda: next(ticks))
+    monkeypatch.setattr(source_ledger, "DDGS_TIMEOUT_S", 12.0)
     patched([])
 
-    with pytest.raises(urlvestigia.EngineError, match="no answer within 12s"):
-        urlvestigia.text_to_urls("iceberg")
+    with pytest.raises(source_ledger.EngineError, match="no answer within 12s"):
+        source_ledger.text_to_urls("iceberg")
 
 
 @pytest.mark.parametrize("kwargs", [
@@ -329,6 +329,6 @@ def test_the_log_handler_is_always_detached(patched, kwargs):
     patched(kwargs.get("results"), kwargs.get("raises"))
 
     with contextlib.suppress(RuntimeError):
-        urlvestigia.text_to_urls("iceberg")
+        source_ledger.text_to_urls("iceberg")
 
     assert (list(logger.handlers), logger.level, logger.propagate) == before

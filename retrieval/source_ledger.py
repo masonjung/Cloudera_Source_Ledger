@@ -1,4 +1,4 @@
-"""urlvestigia — natural-language text in, a list of URLs out, via free web search.
+"""source_ledger — natural-language text in, a list of URLs out, via free web search.
 
 Free to run: no API keys, no accounts. Web searches go to the engines' public pages
 through the ddgs metasearch library; Wikipedia, OpenAlex, and arXiv are reached
@@ -62,7 +62,7 @@ DDGS_TIMEOUT_DEFAULT_S = 12.0
 
 
 def _ddgs_timeout():
-    raw = os.environ.get("URLVESTIGIA_DDGS_TIMEOUT")
+    raw = os.environ.get("SOURCE_LEDGER_DDGS_TIMEOUT")
     try:
         value = float(raw) if raw else DDGS_TIMEOUT_DEFAULT_S
     except ValueError:
@@ -237,7 +237,7 @@ def _reject_empty(failures, elapsed, cause=None):
         raise EngineError([(
             "all engines",
             f"no answer within {DDGS_TIMEOUT_S:g}s — the network is likely too slow "
-            f"for the current URLVESTIGIA_DDGS_TIMEOUT",
+            f"for the current SOURCE_LEDGER_DDGS_TIMEOUT",
         )]) from cause
 
 

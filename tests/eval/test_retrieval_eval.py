@@ -1,4 +1,4 @@
-"""Retrieval eval harness — the Harden gate for `retrieval/urlvestigia.py`.
+"""Retrieval eval harness — the Harden gate for `retrieval/source_ledger.py`.
 
 Two tiers:
 
@@ -21,7 +21,7 @@ import time
 
 import pytest
 
-import urlvestigia
+import source_ledger
 
 ENGINES = ["duckduckgo", "yahoo", "startpage", "yandex"]
 
@@ -64,14 +64,14 @@ class TestRetrievalContract:
         """
         def _install(results):
             class Fake:
-                # `urlvestigia` configures the client with a timeout and proxy, so a
+                # `source_ledger` configures the client with a timeout and proxy, so a
                 # stand-in has to accept construction arguments.
                 def __init__(self, **kwargs):
                     pass
 
                 def text(self, query, **kwargs):
                     return results
-            monkeypatch.setattr(urlvestigia, "DDGS", Fake)
+            monkeypatch.setattr(source_ledger, "DDGS", Fake)
         return _install
 
     @pytest.fixture
@@ -83,28 +83,28 @@ class TestRetrievalContract:
         provider added later from quietly escaping it.
         """
         def _install(provider, urls):
-            monkeypatch.setitem(urlvestigia.REGISTRY, provider, lambda text, **kw: urls)
+            monkeypatch.setitem(source_ledger.REGISTRY, provider, lambda text, **kw: urls)
         return _install
 
     def test_wellformed_response_satisfies_the_contract(self, stub, fake_results):
         stub(fake_results)
-        assert_retrieval_contract(urlvestigia.text_to_urls("cdp", max_results=10), 10)
+        assert_retrieval_contract(source_ledger.text_to_urls("cdp", max_results=10), 10)
 
     def test_duplicate_heavy_response_still_satisfies_it(self, stub):
         stub([{"href": "https://example.com/same"}] * 20)
-        urls = urlvestigia.text_to_urls("cdp", max_results=10)
+        urls = source_ledger.text_to_urls("cdp", max_results=10)
 
         assert_retrieval_contract(urls, 10)
         assert len(urls) == 1
 
     def test_empty_response_satisfies_it(self, stub):
         stub([])
-        assert_retrieval_contract(urlvestigia.text_to_urls("cdp", max_results=10), 10)
+        assert_retrieval_contract(source_ledger.text_to_urls("cdp", max_results=10), 10)
 
     def test_null_response_satisfies_it(self, stub):
         """ddgs can return None rather than an empty list."""
         stub(None)
-        assert_retrieval_contract(urlvestigia.text_to_urls("cdp", max_results=10), 10)
+        assert_retrieval_contract(source_ledger.text_to_urls("cdp", max_results=10), 10)
 
     def test_malformed_entries_are_filtered_out(self, stub):
         stub([
@@ -113,18 +113,18 @@ class TestRetrievalContract:
             {"href": None},
             {"href": ""},
         ])
-        assert_retrieval_contract(urlvestigia.text_to_urls("cdp", max_results=10), 10)
+        assert_retrieval_contract(source_ledger.text_to_urls("cdp", max_results=10), 10)
 
     def test_every_ui_engine_is_accepted(self, stub):
         """The four engines the UI exposes must all be valid `backend` values.
         A typo here means a UI toggle that silently returns nothing."""
         stub([{"href": "https://example.com/1"}])
         for engine in ENGINES:
-            assert urlvestigia.text_to_urls("cdp", backend=engine) == ["https://example.com/1"]
+            assert source_ledger.text_to_urls("cdp", backend=engine) == ["https://example.com/1"]
 
     def test_full_chain_is_accepted(self, stub):
         stub([{"href": "https://example.com/1"}])
-        assert urlvestigia.text_to_urls("cdp", backend=",".join(ENGINES))
+        assert source_ledger.text_to_urls("cdp", backend=",".join(ENGINES))
 
     @pytest.mark.parametrize("provider", PROVIDERS)
     def test_every_ui_provider_satisfies_the_contract(self, provider_stub, provider):
@@ -133,7 +133,7 @@ class TestRetrievalContract:
         output identically."""
         provider_stub(provider, ["https://example.com/1", "https://example.com/1",
                                  "https://example.com/2"])
-        urls = urlvestigia.text_to_urls("cdp", provider=provider, max_results=10)
+        urls = source_ledger.text_to_urls("cdp", provider=provider, max_results=10)
 
         assert_retrieval_contract(urls, 10)
         assert urls == ["https://example.com/1", "https://example.com/2"]
@@ -144,7 +144,7 @@ class TestRetrievalContract:
         The cap is re-applied centrally so the guarantee does not depend on each
         provider being well-behaved."""
         provider_stub(provider, [f"https://example.com/{i}" for i in range(20)])
-        urls = urlvestigia.text_to_urls("cdp", provider=provider, max_results=3)
+        urls = source_ledger.text_to_urls("cdp", provider=provider, max_results=3)
 
         assert_retrieval_contract(urls, 3)
 
@@ -166,21 +166,21 @@ class TestLiveRetrieval:
         """The one live check worth gating a release on: the default engine, on
         an easy query, returns something. If this fails the accelerator is down
         for every user regardless of what else passes."""
-        urls = urlvestigia.text_to_urls("cloudera cdp documentation", max_results=10)
+        urls = source_ledger.text_to_urls("cloudera cdp documentation", max_results=10)
 
         assert_retrieval_contract(urls, 10)
         assert urls, "default engine (duckduckgo) returned nothing"
 
     def test_within_the_latency_budget(self):
         start = time.monotonic()
-        urlvestigia.text_to_urls("iceberg table format", max_results=10)
+        source_ledger.text_to_urls("iceberg table format", max_results=10)
         elapsed = time.monotonic() - start
 
         assert elapsed < LATENCY_BUDGET_S, \
             f"retrieval took {elapsed:.1f}s, budget is {LATENCY_BUDGET_S}s"
 
     def test_max_results_is_respected_by_real_engines(self):
-        urls = urlvestigia.text_to_urls("apache iceberg", max_results=5)
+        urls = source_ledger.text_to_urls("apache iceberg", max_results=5)
         assert_retrieval_contract(urls, 5)
 
     def test_fallback_chain_is_at_least_as_good_as_one_engine(self):
@@ -188,9 +188,9 @@ class TestLiveRetrieval:
         ever returns *fewer* results than the default alone, the ordering is
         wrong — see the overlap analysis in retrieval/notebooks/eval.ipynb."""
         query = "cloudera data engineering spark"
-        solo = urlvestigia.text_to_urls(query, max_results=10)
+        solo = source_ledger.text_to_urls(query, max_results=10)
         time.sleep(self.COOLDOWN_S)
-        chained = urlvestigia.text_to_urls(query, max_results=10, backend=",".join(ENGINES))
+        chained = source_ledger.text_to_urls(query, max_results=10, backend=",".join(ENGINES))
 
         assert_retrieval_contract(chained, 10)
         assert len(chained) >= len(solo)
@@ -200,7 +200,7 @@ class TestLiveRetrieval:
         """Per-engine availability. Expected to be flaky by design — a failure
         here is a measurement, not necessarily a defect. Record it in the model
         card rather than muting the test."""
-        urls = urlvestigia.text_to_urls("apache iceberg", max_results=10, backend=engine)
+        urls = source_ledger.text_to_urls("apache iceberg", max_results=10, backend=engine)
 
         assert_retrieval_contract(urls, 10)
         if not urls:
@@ -214,7 +214,7 @@ class TestLiveRetrieval:
         datacenter IP, while `ddgs` is the one that may be blocked. If that pattern
         ever inverts, the argument for the API providers has weakened and belongs
         in the model card. A skip here is a recorded observation, not a pass."""
-        urls = urlvestigia.text_to_urls("apache iceberg", max_results=10, provider=provider)
+        urls = source_ledger.text_to_urls("apache iceberg", max_results=10, provider=provider)
 
         assert_retrieval_contract(urls, 10)
         if not urls:
@@ -223,7 +223,7 @@ class TestLiveRetrieval:
     def test_wikipedia_region_selects_the_language_edition(self):
         """`region` has to mean something real per provider, or the per-provider
         controls are decoration. Korean must return the Korean edition."""
-        urls = urlvestigia.text_to_urls("아파치 아이스버그", max_results=5,
+        urls = source_ledger.text_to_urls("아파치 아이스버그", max_results=5,
                                   provider="wikipedia", region="kr-kr")
 
         assert_retrieval_contract(urls, 5)

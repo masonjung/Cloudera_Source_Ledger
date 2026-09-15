@@ -29,7 +29,7 @@ import db
 # Deliverables, not source: `data/` is the Ingest layer's input and an export is
 # its output, so it gets its own directory (gitignored — every row carries the
 # query text verbatim). Pinned to the layer, not to `db.DB_PATH.parent`, because
-# URLVESTIGIA_DB can point the store anywhere and the export still belongs here.
+# SOURCE_LEDGER_DB can point the store anywhere and the export still belongs here.
 EXPORTS = db.HERE / "exports"
 
 # One row per URL, provenance denormalized onto each. See `write_csv`.

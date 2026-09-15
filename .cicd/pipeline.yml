@@ -1,4 +1,4 @@
-# URLvestigia — build → test → deploy. One Git-driven pipeline.
+# Source Ledger — build → test → deploy. One Git-driven pipeline.
 #
 # GitLab does not look here by default. Point it at this file once:
 #   Settings → CI/CD → General pipelines → CI/CD configuration file
@@ -26,7 +26,7 @@ default:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   # Never let CI write to a checked-in database.
-  URLVESTIGIA_DB: "$CI_PROJECT_DIR/.tmp/ci.db"
+  SOURCE_LEDGER_DB: "$CI_PROJECT_DIR/.tmp/ci.db"
 
 cache:
   key:
@@ -47,7 +47,7 @@ build:
     - pip install -r app/requirements.txt -r tests/requirements.txt
     # Import each layer the way the runtime does. Catches a broken sys.path
     # before the test stage buries it in a fixture error.
-    - python -c "import sys; sys.path[:0] = ['retrieval', 'data', 'pipelines/jobs']; import urlvestigia, db, record, url_enrichment; print('layers import OK')"
+    - python -c "import sys; sys.path[:0] = ['retrieval', 'data', 'pipelines/jobs']; import source_ledger, db, record, url_enrichment; print('layers import OK')"
     - python -c "import app.server; from app import hosting; print('serve layer imports OK')"
   artifacts:
     paths:
@@ -72,32 +72,22 @@ test:
       junit: report.xml
     expire_in: 1 week
 
-# Validates the artifacts that only ever run on a cluster. Each of these
-# dry-runs, which is the only check available without a CDP environment — but a
-# syntax error or a bad path fails here rather than at 02:30 in a scheduled job.
+# Validates the artifacts that only ever run on a cluster. The Spark jobs
+# themselves can no longer be exercised here — they write on invocation and need
+# pyspark plus a live catalog — so what is checked is everything around them that
+# does not. `read_sqlite` and the column lists both jobs depend on are covered by
+# pytest in the `test` stage -- including the CDE job definition's args against
+# the job's own parser.
 verify-jobs:
   stage: test
-  needs: [build]
+  # No `needs: [build]`: nothing here installs anything, so pulling build's pip
+  # cache artifact would download a wheel set this job never opens.
+  needs: []
   script:
-    - pip install -r app/requirements.txt
-    - mkdir -p "$(dirname "$URLVESTIGIA_DB")"
-    # Seed a throwaway row so the dry-run plan has something to report — the
-    # same way the GitHub Actions verify-jobs job does it. Pointing this at
-    # /dev/null with `|| true` would swallow every failure and verify nothing.
-    - |
-      python -c "
-      import sys; sys.path.insert(0, 'data')
-      import db
-      db.init_db()
-      db.save_search('ci probe', ['https://example.org/a'], provider='ddgs',
-                     region='wt-wt', safesearch='moderate', timelimit='',
-                     backend='duckduckgo', max_results=10)
-      "
-    - python data/ingest/load_to_iceberg.py --db "$URLVESTIGIA_DB"
-    - python pipelines/jobs/url_enrichment.py            # dry run prints the MERGE
-    - python -c "import json; json.load(open('governance/sdx/ranger-policies.json')); print('ranger policies parse OK')"
     - bash -n infra/cdp/provision.sh && echo "provision.sh syntax OK"
     - bash -n .cicd/deploy.sh && echo "deploy.sh syntax OK"
+    - bash -n scripts/new-accelerator.sh && echo "new-accelerator.sh syntax OK"
+    - python -c "import json; json.load(open('governance/sdx/ranger-policies.json')); print('ranger policies parse OK')"
 
 # ---------------------------------------------------------------------------
 # deploy — manual, main only
@@ -142,4 +132,4 @@ deploy:app:
     - .cicd/deploy.sh app --execute
   environment:
     name: cdp/$CDP_ENV
-    url: https://$CDP_ENV-ai.cloudera.site/urlvestigia
+    url: https://$CDP_ENV-ai.cloudera.site/source_ledger

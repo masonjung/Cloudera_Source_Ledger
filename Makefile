@@ -1,12 +1,12 @@
-# URLvestigia — one command to ship.
+# Source Ledger — one command to ship.
 #
 #   make help      list every target
 #   make dev       run the Serve layer
 #   make test      the Harden gate
 #   make deploy    dry-run the standard deploy
 #
-# Every target that would change something outside this repo dry-runs by
-# default. Pass --execute to the underlying script to make it real.
+# Targets marked (dry run) need --execute to act. `ingest` and `pipelines` carry
+# no such guard — they submit Spark work as soon as they are invoked.
 
 SHELL := /bin/bash
 
@@ -15,7 +15,7 @@ VENV_PY := $(wildcard .venv/Scripts/python.exe) $(wildcard .venv/bin/python)
 PYTHON  ?= $(if $(VENV_PY),$(firstword $(VENV_PY)),python3)
 
 CATALOG    ?= spark_catalog
-DATABASE   ?= urlvestigia
+DATABASE   ?= source_ledger
 PORT       ?= 8000
 BACKUP_DIR ?= backups
 
@@ -24,7 +24,7 @@ BACKUP_DIR ?= backups
 
 ## help: list every target
 help:
-	@echo "URLvestigia — Cloudera Forge accelerator"
+	@echo "Source Ledger — Cloudera Forge accelerator"
 	@echo ""
 	@echo "  Develop"
 	@echo "    make install     install runtime + test dependencies"
@@ -42,10 +42,10 @@ help:
 	@echo "  Keep the dev store"
 	@echo "    make backup      dated local snapshot → $(BACKUP_DIR)/ (safe while running)"
 	@echo ""
-	@echo "  Inspect the platform layers (all dry runs)"
-	@echo "    make ingest      SQLite → Iceberg load plan"
-	@echo "    make pipelines   URL enrichment plan, including the literal MERGE"
-	@echo "    make govern      SDX / Ranger policy import plan"
+	@echo "  Platform layers"
+	@echo "    make ingest      SQLite → Iceberg load        (WRITES - needs Spark)"
+	@echo "    make pipelines   URL enrichment MERGE         (WRITES - needs Spark)"
+	@echo "    make govern      SDX / Ranger policy import    (dry run)"
 	@echo ""
 	@echo "  Ship"
 	@echo "    make provision   one-time platform provisioning (dry run)"
@@ -55,7 +55,7 @@ help:
 	@echo "    make new VERTICAL=healthcare USECASE=readmission-risk"
 	@echo "    make clean       remove caches and scratch databases"
 	@echo ""
-	@echo "  Nothing here changes a remote system without --execute."
+	@echo "  (dry run) targets need --execute to act."
 	@echo "  Using: $(PYTHON)"
 
 ## install: install runtime and test dependencies
@@ -104,16 +104,16 @@ test-live:
 	$(PYTHON) -m pytest tests -q --live
 
 ## backup: snapshot the SQLite dev store to a dated local file
-# No --execute here, unlike the platform targets: this writes one new local file
-# and refuses to overwrite, so there is nothing remote to guard.
+# No --execute here, unlike provision/deploy/govern: this writes one new local
+# file and refuses to overwrite, so there is nothing remote to guard.
 backup:
 	$(PYTHON) data/backup.py --dir $(BACKUP_DIR)
 
-## ingest: print the SQLite → Iceberg load plan
+## ingest: load the SQLite dev store into Iceberg (writes; needs Spark)
 ingest:
 	$(PYTHON) data/ingest/load_to_iceberg.py --catalog $(CATALOG) --database $(DATABASE)
 
-## pipelines: print the enrichment plan and the MERGE it would run
+## pipelines: run the URL enrichment MERGE (writes; needs Spark)
 pipelines:
 	$(PYTHON) pipelines/jobs/url_enrichment.py --catalog $(CATALOG) --database $(DATABASE)
 
@@ -143,4 +143,4 @@ endif
 clean:
 	@find . -path ./.venv -prune -o -type d -name __pycache__ -print0 2>/dev/null | xargs -0 rm -rf
 	@rm -rf .pytest_cache report.xml .tmp
-	@echo "cleaned (data/urlvestigia.db left alone — delete it by hand if you mean to)"
+	@echo "cleaned (data/source_ledger.db left alone — delete it by hand if you mean to)"

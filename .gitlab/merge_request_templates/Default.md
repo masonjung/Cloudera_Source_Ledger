@@ -35,7 +35,7 @@ Closes #
 
 **Changed a retrieval default in `retrieval/`?**
 - [ ] `retrieval/notebooks/eval.ipynb` run, results dated in
-      `governance/model_cards/urlvestigia-retrieval.md`
+      `governance/model_cards/source-ledger-retrieval.md`
 - [ ] Defaults table in `retrieval/README.md` updated
 
 **Changed a schema in `data/`?**
@@ -50,7 +50,8 @@ Closes #
 
 **Changed a `pipelines/` job?**
 - [ ] Still idempotent — safe to re-run over an overlapping window
-- [ ] Dry run (`make pipelines`) reviewed; the printed SQL is what you intend
+- [ ] `MERGE_SQL` read in the diff; the statement that will run is what you intend
+      (there is no dry run — `make pipelines` writes)
 
 ## Gate
 

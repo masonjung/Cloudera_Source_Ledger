@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 import pytest
-import urlvestigia
+import source_ledger
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 def cli():
     """Import `scripts/cli.py`, which is a script rather than a package member."""
     spec = importlib.util.spec_from_file_location(
-        "urlvestigia_cli", ROOT / "scripts" / "cli.py")
+        "source_ledger_cli", ROOT / "scripts" / "cli.py")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -49,7 +49,7 @@ def fake_search(cli, monkeypatch):
         return [f"https://example.com/{i}" for i in range(3)]
 
     search.calls = []
-    monkeypatch.setattr(cli.record.urlvestigia, "text_to_urls", search)
+    monkeypatch.setattr(cli.record.source_ledger, "text_to_urls", search)
     return search
 
 
@@ -135,7 +135,7 @@ def test_no_store_searches_but_records_nothing(run, temp_db):
 def test_zero_results_exits_three_and_saves_nothing(run, cli, temp_db, monkeypatch):
     """3, not 1: the corpus answered and had nothing. A script has to be able to
     tell that from a dead network, which is what 1 means."""
-    monkeypatch.setattr(cli.record.urlvestigia, "text_to_urls", lambda t, **kw: [])
+    monkeypatch.setattr(cli.record.source_ledger, "text_to_urls", lambda t, **kw: [])
     code, out, err = run("search", "iceberg")
 
     assert code == 3
@@ -146,10 +146,10 @@ def test_zero_results_exits_three_and_saves_nothing(run, cli, temp_db, monkeypat
 
 def test_every_engine_failing_exits_one_and_names_each_one(run, cli, monkeypatch):
     def boom(text, **kwargs):
-        raise urlvestigia.EngineError([("duckduckgo", "HTTP 403"),
+        raise source_ledger.EngineError([("duckduckgo", "HTTP 403"),
                                        ("yahoo", "timed out")])
 
-    monkeypatch.setattr(cli.record.urlvestigia, "text_to_urls", boom)
+    monkeypatch.setattr(cli.record.source_ledger, "text_to_urls", boom)
     code, out, err = run("search", "iceberg")
 
     assert code == 1
@@ -167,7 +167,7 @@ def test_a_generic_failure_names_the_provider_not_just_the_exception(
     def boom(text, **kwargs):
         raise RuntimeError("connection reset")
 
-    monkeypatch.setattr(cli.record.urlvestigia, "text_to_urls", boom)
+    monkeypatch.setattr(cli.record.source_ledger, "text_to_urls", boom)
     code, out, err = run("search", "iceberg", "--provider", "arxiv")
 
     assert code == 1
@@ -200,7 +200,7 @@ def test_urls_go_to_stdout_and_provenance_to_stderr(run):
     code, out, err = run("search", "iceberg", "--provider", "wikipedia")
 
     assert out.splitlines() == [f"https://example.com/{i}" for i in range(3)]
-    assert "URLvestigia search" in err
+    assert "Source Ledger search" in err
     assert "not applied" in err
 
 

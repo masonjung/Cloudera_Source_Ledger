@@ -151,7 +151,7 @@ class TestCli:
                                                         tmp_path, capsys):
         backup_cli.main(["--dir", str(tmp_path)])
 
-        written = list(tmp_path.glob("urlvestigia-*.db"))
+        written = list(tmp_path.glob("source-ledger-*.db"))
         assert len(written) == 1
         assert "2 searches, 3 URLs" in capsys.readouterr().out
 
@@ -191,12 +191,12 @@ class TestCli:
         written = backup_cli.snapshot(tmp_path)
 
         assert written.parent == tmp_path
-        assert written.name.startswith("urlvestigia-")
+        assert written.name.startswith("source-ledger-")
         assert backup_cli.counts(written) == {"searches": 2, "search_urls": 3}
 
     def test_snapshot_defaults_to_the_module_directory(self, populated_db,
                                                        tmp_path, monkeypatch):
-        """`DEFAULT_DIR` is read at call time, which is what lets `URLVESTIGIA_BACKUP_DIR`
+        """`DEFAULT_DIR` is read at call time, which is what lets `SOURCE_LEDGER_BACKUP_DIR`
         and the test suite redirect it without touching the caller."""
         monkeypatch.setattr(backup_cli, "DEFAULT_DIR", tmp_path / "elsewhere")
         written = backup_cli.snapshot()
@@ -211,5 +211,5 @@ class TestCli:
         earlier = backup_cli.default_name(datetime(2026, 8, 11, 9, 5, 3, tzinfo=timezone.utc))
         later = backup_cli.default_name(datetime(2026, 8, 11, 14, 52, 33, tzinfo=timezone.utc))
 
-        assert earlier == "urlvestigia-20260811-090503.db"
+        assert earlier == "source-ledger-20260811-090503.db"
         assert sorted([later, earlier]) == [earlier, later]

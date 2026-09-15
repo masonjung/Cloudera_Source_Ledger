@@ -1,7 +1,7 @@
-"""URLvestigia persistence — SQLite storage for searches and their result URLs.
+"""Source Ledger persistence — SQLite storage for searches and their result URLs.
 
-The database is a single SQLite file, `urlvestigia.db` in this directory by default
-(set the URLVESTIGIA_DB env var to move it). The schema lives in schema.sql.
+The database is a single SQLite file, `source_ledger.db` in this directory by default
+(set the SOURCE_LEDGER_DB env var to move it). The schema lives in schema.sql.
 Only links are stored, never page content.
 """
 
@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-DB_PATH = Path(os.environ.get("URLVESTIGIA_DB") or HERE / "urlvestigia.db")
+DB_PATH = Path(os.environ.get("SOURCE_LEDGER_DB") or HERE / "source_ledger.db")
 
 _SCHEMA = (HERE / "schema.sql").read_text(encoding="utf-8")
 

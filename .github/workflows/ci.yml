@@ -1,4 +1,4 @@
-# URLvestigia — CI on GitHub.
+# Source Ledger — CI on GitHub.
 #
 # This repo carries two pipeline definitions on purpose, and they are not
 # duplicates of each other:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Every layer imports the way the runtime imports it
         run: |
-          python -c "import sys; sys.path[:0] = ['retrieval', 'data', 'pipelines/jobs']; import urlvestigia, db, record, url_enrichment; print('layers import OK')"
+          python -c "import sys; sys.path[:0] = ['retrieval', 'data', 'pipelines/jobs']; import source_ledger, db, record, url_enrichment; print('layers import OK')"
           python -c "import app.server; from app import hosting; print('serve layer imports OK')"
 
       # No --live. CI must never fail because a search provider is rate-limiting;
@@ -51,9 +51,11 @@ jobs:
       - name: The Harden gate
         run: pytest tests -q
 
-  # Mirrors the GitLab `verify-jobs` stage: the artifacts that only ever execute
-  # on a cluster. Each dry-runs, which is the only check available without a CDP
-  # environment — but a bad path fails here rather than at 02:30 in a scheduled job.
+  # Mirrors the GitLab `verify-jobs` stage. The Spark jobs themselves can no
+  # longer be exercised here — they write on invocation and need pyspark plus a
+  # live catalog — so this checks everything around them that does not. The jobs
+  # themselves are covered by pytest in the `test` job: `read_sqlite`, the column
+  # lists, and the CDE job definition's args against the job's own parser.
   verify-jobs:
     runs-on: ubuntu-latest
     steps:
@@ -61,38 +63,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: pip
-          cache-dependency-path: app/requirements.txt
-
-      - name: Install
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r app/requirements.txt
-
-      # Against a throwaway store with one real row, so the plan has something to
-      # report. Pointing it at /dev/null would need `|| true`, and a step that
-      # swallows every failure verifies nothing.
-      - name: Ingest plan (dry run)
-        run: |
-          export URLVESTIGIA_DB="${RUNNER_TEMP}/ci.db"
-          python -c "
-          import sys; sys.path.insert(0, 'data')
-          import db
-          db.init_db()
-          db.save_search('ci probe', ['https://example.org/a'], provider='ddgs',
-                         region='wt-wt', safesearch='moderate', timelimit='',
-                         backend='duckduckgo', max_results=10)
-          "
-          python data/ingest/load_to_iceberg.py --db "${URLVESTIGIA_DB}"
-
-      - name: Enrichment plan (dry run, prints the MERGE)
-        run: python pipelines/jobs/url_enrichment.py
-
-      - name: Ranger policies parse
-        run: python -c "import json; json.load(open('governance/sdx/ranger-policies.json')); print('ranger policies parse OK')"
 
       - name: Shell scripts parse
         run: |
           bash -n infra/cdp/provision.sh      && echo "provision.sh syntax OK"
           bash -n .cicd/deploy.sh             && echo "deploy.sh syntax OK"
           bash -n scripts/new-accelerator.sh  && echo "new-accelerator.sh syntax OK"
+
+      - name: Ranger policies parse
+        run: python -c "import json; json.load(open('governance/sdx/ranger-policies.json')); print('ranger policies parse OK')"

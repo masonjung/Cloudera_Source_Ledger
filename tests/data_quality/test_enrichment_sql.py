@@ -13,6 +13,9 @@ is the only guard available without Spark, and the failure it prevents is silent
 import re
 from pathlib import Path
 
+import pytest
+import yaml
+
 import url_enrichment
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -46,11 +49,11 @@ def staged_aliases():
 class TestCuratedUrlsAlignment:
     def test_staged_columns_match_curated_urls_exactly(self):
         """Same names, same order — this is what `INSERT *` relies on."""
-        assert staged_aliases() == ddl_columns("urlvestigia.curated_urls")
+        assert staged_aliases() == ddl_columns("source_ledger.curated_urls")
 
     def test_providers_is_carried_all_the_way_through(self):
         assert "providers" in staged_aliases()
-        assert "providers" in ddl_columns("urlvestigia.curated_urls")
+        assert "providers" in ddl_columns("source_ledger.curated_urls")
 
     def test_every_aggregate_is_also_merged_on_conflict(self):
         """An aggregate in the INSERT but not the UPDATE freezes at its first
@@ -105,7 +108,35 @@ class TestCuratedUrlsAlignment:
 class TestRawTableAlignment:
     def test_enrichment_reads_columns_the_raw_table_declares(self):
         """The job selects `provider` off raw_search_urls; the DDL must have it."""
-        raw = ddl_columns("urlvestigia.raw_search_urls")
+        raw = ddl_columns("source_ledger.raw_search_urls")
 
         assert "provider" in raw
         assert "url" in raw and "position" in raw and "search_id" in raw
+
+
+class TestCdeJobDefinition:
+    """The args CDE will pass must be args the job still accepts.
+
+    `pipelines/cde/url_enrichment.job.yaml` hard-codes the command line for the
+    scheduled run; `build_parser()` defines what the job understands. They are two
+    files edited by hand, and a flag removed from one but not the other fails only
+    on the cluster, at 02:30, in a job nobody is watching.
+    """
+
+    @staticmethod
+    def cde_args():
+        spec = yaml.safe_load(
+            (ROOT / "pipelines" / "cde" / "url_enrichment.job.yaml").read_text(
+                encoding="utf-8"))
+        return spec["jobs"][0]["spark"]["args"]
+
+    def test_scheduled_args_are_accepted_by_the_parser(self):
+        args = url_enrichment.build_parser().parse_args(self.cde_args())
+
+        assert args.catalog == "spark_catalog"
+        assert args.database == "source_ledger"
+
+    def test_parser_rejects_a_flag_the_job_no_longer_has(self):
+        """Guards the test above: it only means something if the parser is strict."""
+        with pytest.raises(SystemExit):
+            url_enrichment.build_parser().parse_args(["--execute"])

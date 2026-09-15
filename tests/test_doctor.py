@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 def doctor():
     """Import `scripts/doctor.py`, which is a script rather than a package member."""
     spec = importlib.util.spec_from_file_location(
-        "urlvestigia_doctor", ROOT / "scripts" / "doctor.py")
+        "source_ledger_doctor", ROOT / "scripts" / "doctor.py")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -34,7 +34,7 @@ def offline(doctor, monkeypatch):
     def boom(*args, **kwargs):
         raise OSError("network is unreachable")
 
-    monkeypatch.setattr(doctor.urlvestigia, "text_to_urls", boom)
+    monkeypatch.setattr(doctor.source_ledger, "text_to_urls", boom)
 
 
 def test_reports_cleanly_with_no_network(doctor, offline, capsys):
@@ -52,7 +52,7 @@ def test_reports_cleanly_with_no_network(doctor, offline, capsys):
 
 
 def test_a_healthy_run_exits_zero(doctor, monkeypatch, capsys):
-    monkeypatch.setattr(doctor.urlvestigia, "text_to_urls",
+    monkeypatch.setattr(doctor.source_ledger, "text_to_urls",
                         lambda text, **kw: ["https://example.com"])
 
     assert doctor.main() == 0
@@ -68,7 +68,7 @@ def test_blocked_web_still_exits_zero_and_recommends_the_apis(doctor, monkeypatc
             raise OSError("blocked")
         return ["https://example.com"]
 
-    monkeypatch.setattr(doctor.urlvestigia, "text_to_urls", selective)
+    monkeypatch.setattr(doctor.source_ledger, "text_to_urls", selective)
 
     assert doctor.main() == 0
     out = capsys.readouterr().out
@@ -79,9 +79,9 @@ def test_blocked_web_still_exits_zero_and_recommends_the_apis(doctor, monkeypatc
 def test_a_fast_empty_answer_is_called_a_block(doctor, monkeypatch):
     """The heuristic the whole preflight turns on: a refusal returns instantly, a
     real search does not. ddgs cannot tell them apart, so timing is all that is left."""
-    monkeypatch.setattr(doctor.urlvestigia, "text_to_urls", lambda text, **kw: [])
+    monkeypatch.setattr(doctor.source_ledger, "text_to_urls", lambda text, **kw: [])
     label, status, detail, _ = doctor._probe("web: yahoo",
-                                             lambda: doctor.urlvestigia.text_to_urls("x"))
+                                             lambda: doctor.source_ledger.text_to_urls("x"))
 
     assert status == doctor.FAIL
     assert "probably blocked" in detail

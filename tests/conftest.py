@@ -1,8 +1,8 @@
-"""Shared fixtures and import-path setup for the URLvestigia test suite.
+"""Shared fixtures and import-path setup for the Source Ledger test suite.
 
 The accelerator's layers are directories, not installed packages, so tests add
 them to `sys.path` the same way `app/server.py` does at runtime. Import order
-matters here: `URLVESTIGIA_DB` must be redirected **before** anything imports `db`,
+matters here: `SOURCE_LEDGER_DB` must be redirected **before** anything imports `db`,
 because `db.DB_PATH` is resolved once at module import.
 """
 
@@ -15,8 +15,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # Redirect the SQLite store to a throwaway file before `db` is ever imported.
 # Without this, running the suite would write to the developer's real database.
-_TMP_DB = Path(tempfile.gettempdir()) / "urlvestigia-pytest.db"
-os.environ["URLVESTIGIA_DB"] = str(_TMP_DB)
+_TMP_DB = Path(tempfile.gettempdir()) / "source-ledger-pytest.db"
+os.environ["SOURCE_LEDGER_DB"] = str(_TMP_DB)
 
 for layer in ("retrieval", "data", "pipelines/jobs", "scripts"):
     sys.path.insert(0, str(ROOT / layer))
@@ -126,7 +126,7 @@ def client(monkeypatch, tmp_path, temp_db):
         return [f"https://example.com/{text.replace(' ', '-')}/{i}" for i in range(3)]
 
     fake_search.calls = []
-    monkeypatch.setattr(server.urlvestigia, "text_to_urls", fake_search)
+    monkeypatch.setattr(server.source_ledger, "text_to_urls", fake_search)
 
     test_client = TestClient(server.app)
     test_client.search_calls = fake_search.calls

@@ -53,8 +53,8 @@ class TestNormalizeUrl:
         assert normalize_url(url) == url
 
     def test_the_documented_sample_normalises_as_advertised(self):
-        """This exact string appears in the job's dry-run output and in
-        pipelines/README.md. If it changes, both are lying."""
+        """One string exercising every transformation pipelines/README.md
+        advertises. Nothing else asserts they all hold at once."""
         raw = "https://WWW.Example.com/Docs/?utm_source=news&topic=iceberg#intro"
         assert normalize_url(raw) == "https://example.com/Docs?topic=iceberg"
 

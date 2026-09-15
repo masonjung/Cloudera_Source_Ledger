@@ -1,7 +1,9 @@
-# Walkthrough — URLvestigia across every layer
+# Walkthrough — Source Ledger across every layer
 
-Follow one search from a form post to a governed row in `curated_urls`. Every command
-here runs on a laptop; nothing needs a CDP environment until the last section.
+Follow one search from a form post to a governed row in `curated_urls`. Steps 0-3 and
+6 run on a laptop. Steps 4 and 5 are the Spark jobs: they write on invocation and need
+a cluster, so they are presented here as what they do rather than as something to run
+locally.
 
 Budget about 20 minutes.
 
@@ -29,7 +31,7 @@ python scripts/example.py
 
 ```python
 # scripts/example.py, in full
-from urlvestigia import text_to_urls
+from source_ledger import text_to_urls
 
 for url in text_to_urls("Cloudera CDP supports use cases", max_results=16):
     print(url)
@@ -64,7 +66,7 @@ Type a question, pick engines, hit **Search**. What happens:
 2. Checked engines are filtered, deduplicated, and joined into a fallback chain.
    Order is preserved for a reproducible request record, not because engines are
    tried in sequence — see step 1.
-3. `urlvestigia.text_to_urls()` runs.
+3. `source_ledger.text_to_urls()` runs.
 4. `db.save_search()` persists the query, its full option set, and the URLs.
 5. **303 redirect** back to `/` with a flash message — reloading never re-runs the
    search.
@@ -84,8 +86,8 @@ All three are asserted in [`tests/test_server.py`](../tests/test_server.py).
 The searches you just ran are in SQLite:
 
 ```bash
-sqlite3 data/urlvestigia.db "SELECT id, query, backend, region FROM searches ORDER BY id DESC LIMIT 5;"
-sqlite3 data/urlvestigia.db "SELECT position, url FROM search_urls WHERE search_id = 1 ORDER BY position;"
+sqlite3 data/source_ledger.db "SELECT id, query, backend, region FROM searches ORDER BY id DESC LIMIT 5;"
+sqlite3 data/source_ledger.db "SELECT position, url FROM search_urls WHERE search_id = 1 ORDER BY position;"
 ```
 
 Two tables, parent and child, cascade on delete. Every statement the application runs
@@ -100,41 +102,51 @@ is the local tier's answer to duplication; step 5 shows the lakehouse's better o
 ## 4. Ingest — crossing to the platform tier
 
 ```bash
-make ingest
+make ingest        # needs Spark + a live Iceberg catalog; writes on invocation
 ```
 
-```
-URLvestigia ingest — DRY RUN (no writes)
-====================================================
-source     data/urlvestigia.db
-target     spark_catalog.urlvestigia
-watermark  (none — full load)
+[`data/ingest/load_to_iceberg.py`](../data/ingest/load_to_iceberg.py) reads whatever
+`app/server.py` has been writing and appends it to the raw tables:
 
-table                            rows
---------------------------------------
-spark_catalog.urlvestigia.raw_searches    3
-spark_catalog.urlvestigia.raw_search_urls 27
-```
+| From SQLite | To Iceberg |
+|---|---|
+| `searches` | `spark_catalog.source_ledger.raw_searches` |
+| `search_urls` | `spark_catalog.source_ledger.raw_search_urls` |
 
-The dry run needs nothing but the standard library, which is the point — you can read
-exactly what would be written before any cluster exists. `--execute` needs Spark and
-the tables from [`data/iceberg/ddl.sql`](../data/iceberg/ddl.sql).
+`--since` takes an ISO-8601 UTC watermark so a scheduled run loads only what is new;
+omit it for a full load. `created_at` arrives as a string and is cast to a real
+timestamp on the way in, and `ingested_at` is stamped by the job.
+
+There is no preview mode — running this submits the write. What *is* checkable without
+a cluster is the half that does not need one: `read_sqlite`, the watermark filter, and
+the column lists that must stay aligned with
+[`data/iceberg/ddl.sql`](../data/iceberg/ddl.sql) are all covered by
+
+```bash
+pytest tests/test_ingest.py -q
+```
 
 ---
 
 ## 5. Process — where the interesting work is
 
 ```bash
-make pipelines
+make pipelines     # needs Spark + a live Iceberg catalog; writes on invocation
 ```
 
-This prints the literal `MERGE` statement that would run, plus the normalisation
-sample:
+The statement it runs is `MERGE_SQL` in
+[`pipelines/jobs/url_enrichment.py`](../pipelines/jobs/url_enrichment.py), written as
+literal SQL rather than a DataFrame write so it can be read before it is scheduled.
+
+The normalisation it applies first is pure Python and needs no cluster, so you can see
+it on a laptop:
+
+```bash
+python -c "import sys; sys.path.insert(0, 'pipelines/jobs'); from url_enrichment import normalize_url; print(normalize_url('https://WWW.Example.com/Docs/?utm_source=news&topic=iceberg#intro'))"
+```
 
 ```
-normalisation sample
-  in   https://WWW.Example.com/Docs/?utm_source=news&topic=iceberg#intro
-  out  https://example.com/Docs?topic=iceberg
+https://example.com/Docs?topic=iceberg
 ```
 
 **Compare this to step 3.** `db.dedupe_urls()` compares raw strings, so those two URLs
@@ -172,8 +184,8 @@ stays narrow: analysts read the URL tables outright and see `query` only as a ha
 engineers see everything; the app's service account can append to raw and nothing
 else. Narrow, and defensible in a review.
 
-Then read [`governance/model_cards/urlvestigia-retrieval.md`](../governance/model_cards/urlvestigia-retrieval.md) —
-in particular **what it must not be used for**. URLvestigia cannot tell you a document does
+Then read [`governance/model_cards/source-ledger-retrieval.md`](../governance/model_cards/source-ledger-retrieval.md) —
+in particular **what it must not be used for**. Source Ledger cannot tell you a document does
 not exist. Absence from the results means an engine did not rank it in the top N.
 
 Note what the model card does *not* have: a dated evaluation. That is a real gap, and
@@ -215,7 +227,7 @@ make new VERTICAL=healthcare USECASE=readmission-risk
 ```
 
 Creates `../cloudera-forge-healthcare-readmission-risk/`: the layout and every
-directory's `README.md` guidance, with URLvestigia's own code cleared out, re-pointed to
+directory's `README.md` guidance, with Source Ledger's own code cleared out, re-pointed to
 your name, and a fresh git history.
 
 Then work directory by directory, using each `README.md` as the guide and
@@ -231,7 +243,8 @@ Then work directory by directory, using each `README.md` as the guide and
 | The Process layer does more than move data | step 5 |
 | Classify before you store, and let it shape the policy set | step 6 |
 | Pure functions test without a cluster; Spark ships the same code | step 5 |
-| Dry run by default for anything that changes the world | steps 4, 5, 7 |
+| Dry run by default for provisioning and deploying | step 7 |
+| A job that writes says so, and is read before it is scheduled | steps 4, 5 |
 | Provisioning and deploying are different operations | step 7 |
 | Stating known gaps beats having them found | step 6 |
 

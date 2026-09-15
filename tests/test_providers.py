@@ -15,7 +15,7 @@ import urllib.error
 
 import providers
 import pytest
-import urlvestigia
+import source_ledger
 from ddgs.exceptions import DDGSException
 
 # Captured at import, before conftest's `no_network` fixture replaces the attribute.
@@ -90,7 +90,7 @@ class TestSupportMatrix:
 
     def test_every_provider_has_a_support_entry(self):
         """A registered provider with no matrix row would silently support nothing."""
-        assert set(urlvestigia.REGISTRY) == set(providers.SUPPORTS)
+        assert set(source_ledger.REGISTRY) == set(providers.SUPPORTS)
 
     def test_only_ddgs_takes_an_engine_chain(self):
         """`backend` is a ddgs concept; another provider claiming it would be handed
@@ -184,14 +184,14 @@ class TestOpenAlex:
         assert "filter" not in recorder.calls[0]["params"]
 
     def test_contact_is_sent_as_mailto_when_set(self, http, monkeypatch):
-        monkeypatch.setenv("URLVESTIGIA_CONTACT", "team@example.com")
+        monkeypatch.setenv("SOURCE_LEDGER_CONTACT", "team@example.com")
         recorder = http(OPENALEX_PAYLOAD)
         providers.search_openalex("iceberg", max_results=10)
         assert recorder.calls[0]["params"]["mailto"] == "team@example.com"
 
     def test_unset_contact_is_omitted_rather_than_sent_empty(self, http, monkeypatch):
         """Unset must degrade to the anonymous pool, not fail and not send ""."""
-        monkeypatch.delenv("URLVESTIGIA_CONTACT", raising=False)
+        monkeypatch.delenv("SOURCE_LEDGER_CONTACT", raising=False)
         recorder = http(OPENALEX_PAYLOAD)
         providers.search_openalex("iceberg", max_results=10)
         assert "mailto" not in recorder.calls[0]["params"]
@@ -356,13 +356,13 @@ class TestTheHttpRetry:
 
 class TestUserAgent:
     def test_contact_is_included_when_set(self, monkeypatch):
-        monkeypatch.setenv("URLVESTIGIA_CONTACT", "team@example.com")
+        monkeypatch.setenv("SOURCE_LEDGER_CONTACT", "team@example.com")
         assert "team@example.com" in providers._user_agent()
 
     def test_identifies_the_client_even_when_unset(self, monkeypatch):
         """Wikipedia blocks generic agents, so there is always a descriptive one."""
-        monkeypatch.delenv("URLVESTIGIA_CONTACT", raising=False)
-        assert "URLvestigia" in providers._user_agent()
+        monkeypatch.delenv("SOURCE_LEDGER_CONTACT", raising=False)
+        assert "SourceLedger" in providers._user_agent()
 
 
 # --- Dispatch through the façade -------------------------------------------
@@ -376,19 +376,19 @@ class TestUnsupportedOptionsNeverReachAProvider:
 
     def test_wikipedia_ignores_a_timelimit(self, http):
         recorder = http(WIKIPEDIA_PAYLOAD)
-        urlvestigia.text_to_urls("iceberg", provider="wikipedia", timelimit="w")
+        source_ledger.text_to_urls("iceberg", provider="wikipedia", timelimit="w")
         params = recorder.calls[0]["params"]
         assert not any("date" in key.lower() for key in params)
 
     def test_openalex_ignores_a_region(self, http):
         recorder = http(OPENALEX_PAYLOAD)
-        urlvestigia.text_to_urls("iceberg", provider="openalex", region="kr-kr")
+        source_ledger.text_to_urls("iceberg", provider="openalex", region="kr-kr")
         params = recorder.calls[0]["params"]
         assert "kr" not in json.dumps(params)
 
     def test_arxiv_ignores_safesearch_and_backend(self, http):
         recorder = http(ARXIV_PAYLOAD)
-        urlvestigia.text_to_urls("iceberg", provider="arxiv",
+        source_ledger.text_to_urls("iceberg", provider="arxiv",
                            safesearch="on", backend="duckduckgo,yahoo")
         params = json.dumps(recorder.calls[0]["params"])
         assert "duckduckgo" not in params and "safe" not in params.lower()
@@ -402,8 +402,8 @@ class TestUnsupportedOptionsNeverReachAProvider:
             def text(self, query, **kwargs):
                 return [{"href": "https://example.com/1"}]
 
-        monkeypatch.setattr(urlvestigia, "DDGS", FakeDDGS)
-        assert urlvestigia.text_to_urls("iceberg", provider="evilcorp") == [
+        monkeypatch.setattr(source_ledger, "DDGS", FakeDDGS)
+        assert source_ledger.text_to_urls("iceberg", provider="evilcorp") == [
             "https://example.com/1"]
 
 
@@ -417,7 +417,7 @@ class TestDdgsEmptyResults:
     @staticmethod
     def _raising(exc):
         class FakeDDGS:
-            # `urlvestigia` configures the client with a timeout and proxy, so a
+            # `source_ledger` configures the client with a timeout and proxy, so a
             # stand-in has to accept construction arguments.
             def __init__(self, **kwargs):
                 pass
@@ -429,15 +429,15 @@ class TestDdgsEmptyResults:
 
     def test_no_results_becomes_an_empty_list(self, monkeypatch):
         monkeypatch.setattr(
-            urlvestigia, "DDGS", self._raising(DDGSException("No results found.")))
+            source_ledger, "DDGS", self._raising(DDGSException("No results found.")))
 
-        assert urlvestigia.text_to_urls("iceberg") == []
+        assert source_ledger.text_to_urls("iceberg") == []
 
     def test_a_real_failure_still_propagates(self, monkeypatch):
         """Rate limits and transport errors must stay visible — swallowing them
         would report a blocked engine as a query with no matches."""
         monkeypatch.setattr(
-            urlvestigia, "DDGS", self._raising(DDGSException("Ratelimit: HTTP 429")))
+            source_ledger, "DDGS", self._raising(DDGSException("Ratelimit: HTTP 429")))
 
         with pytest.raises(DDGSException, match="429"):
-            urlvestigia.text_to_urls("iceberg")
+            source_ledger.text_to_urls("iceberg")

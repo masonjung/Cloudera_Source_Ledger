@@ -1,8 +1,8 @@
-# Cloudera Data Engineering job definition — URLvestigia URL enrichment.
+# Cloudera Data Engineering job definition — Source Ledger URL enrichment.
 #
 # Apply with the CDE CLI (the cluster endpoint comes from `cde profile`):
-#   cde resource create --name urlvestigia-jobs
-#   cde resource upload --name urlvestigia-jobs \
+#   cde resource create --name source-ledger-jobs
+#   cde resource upload --name source-ledger-jobs \
 #       --local-path pipelines/jobs/url_enrichment.py
 #   cde job import --file pipelines/cde/url_enrichment.job.yaml
 #
@@ -12,9 +12,9 @@ apiVersion: cde.cloudera.com/v1
 kind: Job
 
 jobs:
-  - name: urlvestigia-url-enrichment
+  - name: source-ledger-url-enrichment
     type: spark
-    # Runs after ingest lands the day's searches. Daily is right for URLvestigia's
+    # Runs after ingest lands the day's searches. Daily is right for Source Ledger's
     # volume; move to hourly only when the ingest cadence justifies it.
     schedule:
       enabled: true
@@ -29,9 +29,8 @@ jobs:
         - "--catalog"
         - "spark_catalog"
         - "--database"
-        - "urlvestigia"
-        - "--execute"
-      # URLvestigia's tables are small. These sizes are deliberately modest — raise
+        - "source_ledger"
+      # Source Ledger's tables are small. These sizes are deliberately modest — raise
       # them from measured spill, not from optimism.
       driverCores: 1
       driverMemory: "2g"
@@ -47,10 +46,10 @@ jobs:
         spark.sql.adaptive.enabled: "true"
         spark.sql.adaptive.coalescePartitions.enabled: "true"
     mounts:
-      - resourceName: urlvestigia-jobs
+      - resourceName: source-ledger-jobs
     logRetentionPolicy:
       retentionDays: 30
 
 resources:
-  - name: urlvestigia-jobs
+  - name: source-ledger-jobs
     type: files

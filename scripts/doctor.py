@@ -22,11 +22,11 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "retrieval"))
 
 import providers
-import urlvestigia
+import source_ledger
 
 # One neutral query, used everywhere. Broad enough that a healthy engine always has
 # matches, so zero results means something is wrong rather than something is obscure.
-PROBE = "climate change"
+PROBE = "Cloudera machine learning runtime"
 PROBE_RESULTS = 5
 
 # A block is fast. A search is not. An engine that returns nothing in under this many
@@ -75,12 +75,12 @@ def _probe(label, call):
 def _environment():
     """The settings that change how the probes behave, so a surprising result is
     attributable rather than mysterious."""
-    contact = os.environ.get("URLVESTIGIA_CONTACT", "").strip()
-    proxy = urlvestigia._ddgs_proxy()
+    contact = os.environ.get("SOURCE_LEDGER_CONTACT", "").strip()
+    proxy = source_ledger._ddgs_proxy()
     return [
-        ("URLVESTIGIA_CONTACT", contact or "unset - using the anonymous rate-limit pool"),
+        ("SOURCE_LEDGER_CONTACT", contact or "unset - using the anonymous rate-limit pool"),
         ("web proxy", proxy or "none"),
-        ("web timeout", f"{urlvestigia.DDGS_TIMEOUT_S:g}s"),
+        ("web timeout", f"{source_ledger.DDGS_TIMEOUT_S:g}s"),
         ("api timeout", f"{providers.HTTP_TIMEOUT_S:g}s x {providers.HTTP_ATTEMPTS} attempts"),
     ]
 
@@ -94,17 +94,17 @@ def rows():
     """
     probes = []
     for name in ("wikipedia", "openalex", "arxiv"):
-        probes.append(_probe(name, lambda name=name: urlvestigia.text_to_urls(
+        probes.append(_probe(name, lambda name=name: source_ledger.text_to_urls(
             PROBE, provider=name, max_results=PROBE_RESULTS)))
     # Each engine alone. Together they would hide exactly what this is here to find.
     for engine in ("duckduckgo", "yahoo", "startpage", "yandex"):
-        probes.append(_probe(f"web: {engine}", lambda e=engine: urlvestigia.text_to_urls(
+        probes.append(_probe(f"web: {engine}", lambda e=engine: source_ledger.text_to_urls(
             PROBE, provider="ddgs", max_results=PROBE_RESULTS, backend=e)))
     return probes
 
 
 def main():
-    print(f'URLvestigia preflight - probing every corpus with "{PROBE}"\n')
+    print(f'Source Ledger preflight - probing every corpus with "{PROBE}"\n')
 
     for name, value in _environment():
         print(f"  {name:22} {value}")

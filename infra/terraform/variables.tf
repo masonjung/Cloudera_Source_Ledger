@@ -1,4 +1,4 @@
-# URLvestigia — input variables for the CDP stack.
+# Source Ledger — input variables for the CDP stack.
 #
 # Defaults describe a small demo footprint. Size up from measured load, not from
 # optimism — see pipelines/README.md.
@@ -6,7 +6,7 @@
 variable "env_name" {
   description = "CDP environment name. Prefixes every resource created here."
   type        = string
-  default     = "urlvestigia-dev"
+  default     = "source-ledger-dev"
 
   validation {
     # CDP environment names surface in DNS entries and resource ARNs.
@@ -24,17 +24,17 @@ variable "region" {
 variable "credential_name" {
   description = "Pre-existing CDP cross-account credential. Created once per cloud account, outside this stack."
   type        = string
-  default     = "urlvestigia-cross-account"
+  default     = "source-ledger-cross-account"
 }
 
 variable "storage_base" {
   description = "Base storage location for the data lake, logs, and Iceberg warehouse."
   type        = string
-  default     = "s3a://urlvestigia-dev"
+  default     = "s3a://source-ledger-dev"
 }
 
 variable "datalake_scale" {
-  description = "Data Lake sizing. LIGHT_DUTY is correct for URLvestigia's volume; MEDIUM_DUTY_HA only when an SLA requires it."
+  description = "Data Lake sizing. LIGHT_DUTY is correct for Source Ledger's volume; MEDIUM_DUTY_HA only when an SLA requires it."
   type        = string
   default     = "LIGHT_DUTY"
 
@@ -72,7 +72,7 @@ variable "tags" {
   description = "Tags applied to every resource. Cost attribution depends on these."
   type        = map(string)
   default = {
-    accelerator = "urlvestigia"
+    accelerator = "source_ledger"
     owner       = "cloudera-forge"
     managed_by  = "terraform"
   }

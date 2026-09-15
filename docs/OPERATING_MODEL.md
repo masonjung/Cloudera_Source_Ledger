@@ -5,7 +5,7 @@
 > accelerator template repository as `docs/OPERATING_MODEL.md`, derived from
 > `docs/presentations/Cloudera_Forge_Operating_Model.pptx`.
 >
-> This file records only how URLvestigia sits inside that model, and is deliberately thin
+> This file records only how Source Ledger sits inside that model, and is deliberately thin
 > so it cannot drift into a competing account. **Read the canonical version first.**
 
 ## The four standard components
@@ -26,14 +26,14 @@
 From selected use case to a deployed, governed solution. The Build phase scales with
 complexity; the others do not.
 
-## How URLvestigia maps onto it
+## How Source Ledger maps onto it
 
-URLvestigia is the template's **worked example** rather than a customer engagement, so its
+Source Ledger is the template's **worked example** rather than a customer engagement, so its
 path through the phases was compressed. Where it actually stands — including the
-three open Harden items — is in [`GATES.md`](GATES.md#where-urlvestigia-stands), stated
+three open Harden items — is in [`GATES.md`](GATES.md#where-source-ledger-stands), stated
 honestly rather than aspirationally.
 
-The one part of the model worth re-reading in URLvestigia's own scorecard: it advances at
+The one part of the model worth re-reading in Source Ledger's own scorecard: it advances at
 **4.05** on technical fit and reusability, not on market demand. A candidate with
 that profile and no teaching role would be a *hold*. Saying so is what makes the
 scorecard worth filling in — see [`BUSINESS_CASE.md`](BUSINESS_CASE.md#scorecard).

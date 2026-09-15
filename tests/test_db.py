@@ -296,8 +296,8 @@ def test_created_at_is_utc_iso8601(temp_db):
     assert parsed.utcoffset().total_seconds() == 0
 
 
-def test_urlvestigia_db_env_var_relocates_the_store(tmp_path, monkeypatch):
-    """`URLVESTIGIA_DB` is how the store moves without touching code — used by CI and
+def test_source_ledger_db_env_var_relocates_the_store(tmp_path, monkeypatch):
+    """`SOURCE_LEDGER_DB` is how the store moves without touching code — used by CI and
     by anyone running two accelerators side by side."""
     import importlib
 
@@ -305,7 +305,7 @@ def test_urlvestigia_db_env_var_relocates_the_store(tmp_path, monkeypatch):
 
     target = tmp_path / "elsewhere" / "custom.db"
     target.parent.mkdir()
-    monkeypatch.setenv("URLVESTIGIA_DB", str(target))
+    monkeypatch.setenv("SOURCE_LEDGER_DB", str(target))
     reloaded = importlib.reload(db)
     try:
         reloaded.init_db()

@@ -7,7 +7,7 @@ Nothing ships until this directory is green. `make test` is what the Harden gate
 
 | Path | Layer under test | What it covers |
 |---|---|---|
-| `test_urlvestigia.py` | AI | Retrieval contract: rank order, dedupe, the `href`/`url` key rename, option forwarding, error propagation |
+| `test_source_ledger.py` | AI | Retrieval contract: rank order, dedupe, the `href`/`url` key rename, option forwarding, error propagation |
 | `test_providers.py` | AI | The support matrix, per-provider URL extraction, and the outbound requests — asserted on the request, not just the results |
 | `test_db.py` | Ingest | Round trips, cascade deletes, dedupe semantics, in-place migration, SQL parameterisation |
 | `test_record.py` | Ingest | The one writer: whitelisting, clamping, and the NULL rule, parametrized from the live support matrix |
@@ -54,7 +54,7 @@ the stub and start making real calls in CI, and the symptom would be a slow flak
 suite rather than a readable failure — so the guard has its own test.
 
 Run the live tier by hand before a release, and record what it reports in
-[`governance/model_cards/urlvestigia-retrieval.md`](../governance/model_cards/urlvestigia-retrieval.md).
+[`governance/model_cards/source-ledger-retrieval.md`](../governance/model_cards/source-ledger-retrieval.md).
 A live failure is often a measurement rather than a defect; the per-engine
 availability test `skip`s instead of failing when an engine returns nothing, because
 that outcome is expected and worth recording rather than worth blocking on.
@@ -64,7 +64,7 @@ that outcome is expected and worth recording rather than worth blocking on.
 - **No network in the default run.** `conftest.client` stubs `text_to_urls`, and
   every AI-layer test installs a fake `DDGS`. If a test needs the network, mark it
   `@pytest.mark.live`.
-- **No test touches the real database.** `conftest.py` redirects `URLVESTIGIA_DB` to a
+- **No test touches the real database.** `conftest.py` redirects `SOURCE_LEDGER_DB` to a
   temp file *at import time*, before `db` is ever imported — `db.DB_PATH` is
   resolved once at module load, so a fixture would be too late.
 - **Test the guarantee, not the implementation.** `assert_retrieval_contract()` in
@@ -82,10 +82,13 @@ that outcome is expected and worth recording rather than worth blocking on.
 Stated plainly, because an unstated gap reads as a claim:
 
 - **No Spark integration test.** `url_enrichment.py`'s pure functions are covered,
-  and `data_quality/test_enrichment_sql.py` checks the staged columns still line up
-  with the Iceberg DDL — but that is string analysis, not execution. The `MERGE` and
-  the Iceberg writes need a cluster. Verify with `--execute` against a dev
-  environment before promoting a pipeline change.
+  and `data_quality/test_enrichment_sql.py` checks two contracts that would
+  otherwise only fail on a cluster: that the staged columns still line up with the
+  Iceberg DDL, and that the args `pipelines/cde/url_enrichment.job.yaml` schedules
+  are args the job still accepts. Both are file analysis, not execution — the
+  `MERGE` and the Iceberg writes need a cluster. Run the job against a dev
+  environment before promoting a pipeline change; it writes on invocation, so
+  never point a first run at production.
 - **No test of the Spark write in `load_to_iceberg.py`.** `read_sqlite` and the
   column lists are covered; `createDataFrame` and `writeTo` are not.
 - **No Terraform or CDP CLI test.** `make provision` dry-runs, which is the check.

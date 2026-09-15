@@ -1,6 +1,6 @@
-# URLvestigia — business case
+# Source Ledger — business case
 
-> **Scope note.** URLvestigia's primary job is to be the Forge template's *worked example*
+> **Scope note.** Source Ledger's primary job is to be the Forge template's *worked example*
 > — a thin but complete accelerator wired across every layer, small enough to read in
 > an afternoon. The case below is written as a real one because a worked example that
 > skips the business case teaches the wrong lesson. Figures marked _(estimate)_ are
@@ -18,7 +18,7 @@ This is invisible because it never fails loudly. It shows up as the same researc
 being redone, and as findings whose provenance nobody can reconstruct three weeks
 later.
 
-## What URLvestigia does
+## What Source Ledger does
 
 Turns a natural-language question into a persisted, governed table of source URLs —
 with the query, the engines, the region, the time window, and the timestamp stored
@@ -38,7 +38,7 @@ Concretely:
 ## Why Cloudera
 
 The honest answer first: **the retrieval itself does not need a platform.** It is a
-library call, and it runs fine on a laptop. If URLvestigia stopped at "get me some links,"
+library call, and it runs fine on a laptop. If Source Ledger stopped at "get me some links,"
 this would not be an accelerator and the right decision would be to say so.
 
 What needs the platform is everything after retrieval:
@@ -61,13 +61,13 @@ Scored against the Qualify criteria. **≥ 4.0 / 5 advances.**
 | Criterion | Weight | Score | Justification |
 |---|---:|---:|---|
 | Market demand | 25% | 3 | Real but not loud. Discovery-and-provenance is a recurring need across verticals rather than a named ask from a specific segment. |
-| Revenue impact | 25% | 3 | Indirect. URLvestigia's value to Cloudera is as a teaching artifact and a starting point, not as a line item _(estimate)_. |
+| Revenue impact | 25% | 3 | Indirect. Source Ledger's value to Cloudera is as a teaching artifact and a starting point, not as a line item _(estimate)_. |
 | Technical fit | 20% | 5 | Uses every layer of the reference stack as designed — Ingest, Lakehouse, Process, AI, Serve, all governed by SDX. |
 | Reusability | 20% | 5 | The layout, the two-tier storage pattern, the eval harness, and the governance scaffolding transfer to any accelerator. The search logic is 40 lines. |
 | Effort | 10% | 5 | Days, not quarters. No API keys, no accounts, no build step. |
 | **Weighted total** | | **4.05** | Advances — on fit and reusability, not on demand. |
 
-The shape of that score is the interesting part. URLvestigia advances because it is
+The shape of that score is the interesting part. Source Ledger advances because it is
 *exemplary*, not because it is in demand. A candidate with this profile and no
 teaching role would be a **hold**, and saying so is what makes the scorecard worth
 filling in.
@@ -92,10 +92,10 @@ filling in.
 
 ## What success looks like
 
-For URLvestigia as a worked example: a developer clones the template, reads
+For Source Ledger as a worked example: a developer clones the template, reads
 [`EXAMPLE.md`](EXAMPLE.md), and understands what belongs in each of the ten
 directories well enough to build their own accelerator without asking. That is the
 Publish gate's last checkbox, and it is the only measure that matters here.
 
-For URLvestigia as a deployed tool: research questions asked more than once are answered
+For Source Ledger as a deployed tool: research questions asked more than once are answered
 from `curated_urls` instead of from a fresh search.

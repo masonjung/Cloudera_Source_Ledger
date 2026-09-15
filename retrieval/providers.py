@@ -15,7 +15,7 @@ chain" in docs/ARCHITECTURE.md.
 
 Each provider returns a plain list of absolute http(s) URLs, in the order the
 provider ranked them. Deduplication and the `max_results` ceiling are applied once,
-in urlvestigia.py, so every provider inherits the same guarantees.
+in source_ledger.py, so every provider inherits the same guarantees.
 
 Stdlib only. retrieval/requirements.txt stays at one dependency so this layer keeps the
 property retrieval/README.md claims for it: importable and testable with nothing else
@@ -66,9 +66,9 @@ SUPPORTS = {
 # a second, so the ceiling is never near them.
 #
 # Read from the environment so a slow or proxied network can be accommodated without a
-# code change. Resolved once at import, like URLVESTIGIA_DB and unlike URLVESTIGIA_CONTACT, so it
+# code change. Resolved once at import, like SOURCE_LEDGER_DB and unlike SOURCE_LEDGER_CONTACT, so it
 # has to be set before the process starts.
-HTTP_TIMEOUT_S = float(os.environ.get("URLVESTIGIA_HTTP_TIMEOUT") or 12)
+HTTP_TIMEOUT_S = float(os.environ.get("SOURCE_LEDGER_HTTP_TIMEOUT") or 12)
 HTTP_ATTEMPTS = 3
 HTTP_RETRY_WAIT_S = 1.0
 
@@ -85,12 +85,12 @@ def _contact():
     and neither is billed. Read from the environment on each call rather than at
     import so tests and a running server can change it without a reload.
     """
-    return os.environ.get("URLVESTIGIA_CONTACT", "").strip()
+    return os.environ.get("SOURCE_LEDGER_CONTACT", "").strip()
 
 
 def _user_agent():
     contact = _contact()
-    base = "URLvestigia/1.0 (Cloudera Forge accelerator)"
+    base = "SourceLedger/1.0 (Cloudera Forge accelerator)"
     return f"{base} ({contact})" if contact else base
 
 
@@ -269,7 +269,7 @@ def search_arxiv(text, *, max_results, timelimit=None, **_ignored):
 
 
 # Provider id -> search function. `ddgs` is absent on purpose: it is a library call
-# rather than an HTTP one and lives in urlvestigia.py, which assembles the full registry.
+# rather than an HTTP one and lives in source_ledger.py, which assembles the full registry.
 REGISTRY = {
     "wikipedia": search_wikipedia,
     "openalex": search_openalex,

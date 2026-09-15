@@ -42,7 +42,7 @@ Two questions on it do most of the work:
   legitimate answer and a fast, cheap disqualification.
 - *"Can the data leave the customer's environment?"* Answer it during Qualify. It
   has killed accelerators at the Harden gate that were fine on every other axis —
-  URLvestigia itself has a real constraint here, in
+  Source Ledger itself has a real constraint here, in
   [`governance/DATA_CLASSIFICATION.md`](../governance/DATA_CLASSIFICATION.md).
 
 Reusability is the criterion people inflate. A demo rebuilt from scratch for every

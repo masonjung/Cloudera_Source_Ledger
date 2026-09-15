@@ -9,9 +9,9 @@ answers *what*, *why*, and *is it done*.
 |---|---|---|
 | 1 | [`EXAMPLE.md`](EXAMPLE.md) | **Start here.** A 20-minute walkthrough of one search across all five layers, on a laptop. |
 | 2 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | You need the layer map and the decisions worth defending |
-| 3 | [`GATES.md`](GATES.md) | You need to know what "done" means — and where URLvestigia actually stands |
+| 3 | [`GATES.md`](GATES.md) | You need to know what "done" means — and where Source Ledger actually stands |
 | 4 | [`BUSINESS_CASE.md`](BUSINESS_CASE.md) | You are scoring this, or writing the case for your own accelerator |
-| 5 | [`OPERATING_MODEL.md`](OPERATING_MODEL.md) | A pointer to the canonical Forge operating model, plus how URLvestigia maps onto it |
+| 5 | [`OPERATING_MODEL.md`](OPERATING_MODEL.md) | A pointer to the canonical Forge operating model, plus how Source Ledger maps onto it |
 | 6 | [`architecture/DESIGN_TEMPLATE.md`](architecture/DESIGN_TEMPLATE.md) | You are changing the UI |
 
 ## Conventions
@@ -19,7 +19,7 @@ answers *what*, *why*, and *is it done*.
 - **Write it before you build it.** `ARCHITECTURE.md` and `BUSINESS_CASE.md` are
   Architect-phase artifacts. A design written after the code is a description, not a
   decision.
-- **State gaps here, not in a review.** [`GATES.md`](GATES.md#where-urlvestigia-stands)
+- **State gaps here, not in a review.** [`GATES.md`](GATES.md#where-source-ledger-stands)
   says the Harden gate is open and names all three reasons. A known gap you wrote down
   is a plan; the same gap found by a customer's reviewer is a problem.
 - **Mark estimates as estimates.** `BUSINESS_CASE.md` tags unmeasured figures
@@ -36,5 +36,5 @@ answers *what*, *why*, and *is it done*.
 
 The template's `docs/presentations/` — the Forge operating-model deck and the
 Cloudera + NVIDIA deck toolkit — is not reproduced in this accelerator. Those live in
-the Forge template repository. URLvestigia carries only the pointer in
+the Forge template repository. Source Ledger carries only the pointer in
 [`OPERATING_MODEL.md`](OPERATING_MODEL.md).

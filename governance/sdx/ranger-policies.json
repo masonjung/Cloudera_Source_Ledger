@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "URLvestigia — SDX / Apache Ranger policy definitions for the Hive-Iceberg service.",
+    "Source Ledger — SDX / Apache Ranger policy definitions for the Hive-Iceberg service.",
     "",
     "Import with:  .cicd/deploy.sh govern   (or by hand)",
     "  curl -u $RANGER_ADMIN -X POST -H 'Content-Type: application/json' \\",
@@ -22,18 +22,18 @@
 
   "policies": [
     {
-      "name": "urlvestigia-engineer-full",
-      "description": "Data engineers own the URLvestigia database end to end - they write the DDL, run the pipelines, and fix the data when a load goes wrong.",
+      "name": "source-ledger-engineer-full",
+      "description": "Data engineers own the Source Ledger database end to end - they write the DDL, run the pipelines, and fix the data when a load goes wrong.",
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": { "values": ["urlvestigia"], "isExcludes": false, "isRecursive": false },
+        "database": { "values": ["source_ledger"], "isExcludes": false, "isRecursive": false },
         "table": { "values": ["*"], "isExcludes": false, "isRecursive": false },
         "column": { "values": ["*"], "isExcludes": false, "isRecursive": false }
       },
       "policyItems": [
         {
-          "groups": ["urlvestigia_data_engineers"],
+          "groups": ["source_ledger_data_engineers"],
           "accesses": [
             { "type": "select", "isAllowed": true },
             { "type": "update", "isAllowed": true },
@@ -50,18 +50,18 @@
     },
 
     {
-      "name": "urlvestigia-app-service-account",
+      "name": "source-ledger-app-service-account",
       "description": "The Serve layer's service account. Reads and appends raw tables; never touches curated_urls, which is pipeline output only.",
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": { "values": ["urlvestigia"], "isExcludes": false, "isRecursive": false },
+        "database": { "values": ["source_ledger"], "isExcludes": false, "isRecursive": false },
         "table": { "values": ["raw_searches", "raw_search_urls"], "isExcludes": false, "isRecursive": false },
         "column": { "values": ["*"], "isExcludes": false, "isRecursive": false }
       },
       "policyItems": [
         {
-          "users": ["srv_urlvestigia_app"],
+          "users": ["srv_source_ledger_app"],
           "accesses": [
             { "type": "select", "isAllowed": true },
             { "type": "update", "isAllowed": true }
@@ -72,18 +72,18 @@
     },
 
     {
-      "name": "urlvestigia-analyst-read-urls",
+      "name": "source-ledger-analyst-read-urls",
       "description": "Analysts read the URL tables outright - these are public web addresses returned by public search engines, classified Public.",
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": { "values": ["urlvestigia"], "isExcludes": false, "isRecursive": false },
+        "database": { "values": ["source_ledger"], "isExcludes": false, "isRecursive": false },
         "table": { "values": ["curated_urls", "raw_search_urls"], "isExcludes": false, "isRecursive": false },
         "column": { "values": ["*"], "isExcludes": false, "isRecursive": false }
       },
       "policyItems": [
         {
-          "groups": ["urlvestigia_analysts"],
+          "groups": ["source_ledger_analysts"],
           "accesses": [{ "type": "select", "isAllowed": true }],
           "delegateAdmin": false
         }
@@ -91,18 +91,18 @@
     },
 
     {
-      "name": "urlvestigia-analyst-read-searches",
-      "description": "Analysts read search metadata - the options that produced each result set. The query column itself is masked by urlvestigia-mask-query-text.",
+      "name": "source-ledger-analyst-read-searches",
+      "description": "Analysts read search metadata - the options that produced each result set. The query column itself is masked by source-ledger-mask-query-text.",
       "isEnabled": true,
       "isAuditEnabled": true,
       "resources": {
-        "database": { "values": ["urlvestigia"], "isExcludes": false, "isRecursive": false },
+        "database": { "values": ["source_ledger"], "isExcludes": false, "isRecursive": false },
         "table": { "values": ["raw_searches"], "isExcludes": false, "isRecursive": false },
         "column": { "values": ["*"], "isExcludes": false, "isRecursive": false }
       },
       "policyItems": [
         {
-          "groups": ["urlvestigia_analysts"],
+          "groups": ["source_ledger_analysts"],
           "accesses": [{ "type": "select", "isAllowed": true }],
           "delegateAdmin": false
         }
@@ -112,19 +112,19 @@
 
   "maskingPolicies": [
     {
-      "name": "urlvestigia-mask-query-text",
+      "name": "source-ledger-mask-query-text",
       "description": "Hash raw_searches.query for analysts. Free text a user typed is Confidential; hashing preserves grouping and join behaviour for analysis while withholding the text itself. Engineers are not in this policy and see the raw value.",
       "isEnabled": true,
       "isAuditEnabled": true,
       "policyType": 1,
       "resources": {
-        "database": { "values": ["urlvestigia"], "isExcludes": false, "isRecursive": false },
+        "database": { "values": ["source_ledger"], "isExcludes": false, "isRecursive": false },
         "table": { "values": ["raw_searches"], "isExcludes": false, "isRecursive": false },
         "column": { "values": ["query"], "isExcludes": false, "isRecursive": false }
       },
       "dataMaskPolicyItems": [
         {
-          "groups": ["urlvestigia_analysts"],
+          "groups": ["source_ledger_analysts"],
           "accesses": [{ "type": "select", "isAllowed": true }],
           "dataMaskInfo": { "dataMaskType": "MASK_HASH" }
         }
@@ -134,18 +134,18 @@
 
   "rowFilterPolicies": [
     {
-      "name": "urlvestigia-filter-analyst-recent",
+      "name": "source-ledger-filter-analyst-recent",
       "description": "Analysts see the trailing 90 days. Older search history has no analytical use here and every extra day is retained behavioural data - a filter is cheaper than a retention argument. Widen deliberately, not by default.",
       "isEnabled": true,
       "isAuditEnabled": true,
       "policyType": 2,
       "resources": {
-        "database": { "values": ["urlvestigia"], "isExcludes": false, "isRecursive": false },
+        "database": { "values": ["source_ledger"], "isExcludes": false, "isRecursive": false },
         "table": { "values": ["raw_searches"], "isExcludes": false, "isRecursive": false }
       },
       "rowFilterPolicyItems": [
         {
-          "groups": ["urlvestigia_analysts"],
+          "groups": ["source_ledger_analysts"],
           "accesses": [{ "type": "select", "isAllowed": true }],
           "rowFilterInfo": {
             "filterExpr": "created_at >= date_sub(current_date(), 90)"
@@ -156,11 +156,11 @@
   ],
 
   "tagPolicies": {
-    "_comment": "Atlas classifications applied to URLvestigia assets. Attach at table creation so lineage and tag-based policies work from the first load rather than being backfilled.",
+    "_comment": "Atlas classifications applied to Source Ledger assets. Attach at table creation so lineage and tag-based policies work from the first load rather than being backfilled.",
     "classifications": [
-      { "name": "PUBLIC_WEB_DATA", "appliedTo": ["urlvestigia.curated_urls", "urlvestigia.raw_search_urls"] },
-      { "name": "USER_SUPPLIED_TEXT", "appliedTo": ["urlvestigia.raw_searches.query"] },
-      { "name": "THIRD_PARTY_SOURCED", "appliedTo": ["urlvestigia.raw_searches", "urlvestigia.raw_search_urls"] }
+      { "name": "PUBLIC_WEB_DATA", "appliedTo": ["source_ledger.curated_urls", "source_ledger.raw_search_urls"] },
+      { "name": "USER_SUPPLIED_TEXT", "appliedTo": ["source_ledger.raw_searches.query"] },
+      { "name": "THIRD_PARTY_SOURCED", "appliedTo": ["source_ledger.raw_searches", "source_ledger.raw_search_urls"] }
     ]
   }
 }

@@ -1,4 +1,4 @@
-# Design system — the URLvestigia UI
+# Design system — the Source Ledger UI
 
 The Serve layer's design spec. Every token below is a CSS custom property declared in
 the `:root` block of [`app/templates/index.html`](../../app/templates/index.html),
@@ -13,7 +13,7 @@ The contrast is the design: input is warm and inviting, output is a machine reco
 
 ```
 ┌─────────────────────────────────────────┐
-│  ▣ URLvestigia               [chips]    │   app shell
+│  ▣ Source Ledger               [chips]    │   app shell
 │  ┌───────────────────────────────────┐  │   light, orange accent
 │  │  New search                       │  │
 │  │  [ textarea                     ] │  │

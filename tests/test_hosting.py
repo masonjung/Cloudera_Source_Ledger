@@ -195,7 +195,7 @@ def test_a_dashboard_identifies_itself(answering):
 @pytest.mark.parametrize("body, status", [
     ({"app": "someone-elses-app", "pid": 1}, 200),   # a different service
     (b"<html>hello</html>", 200),                    # not JSON at all
-    (b'{"app": "urlvestigia"}', 404),                # no such route
+    (b'{"app": "source_ledger"}', 404),                # no such route
 ], ids=["another app", "not json", "no healthz route"])
 def test_only_this_dashboard_is_vouched_for(answering, body, status):
     """Every other answer means the same thing — this is not a server whose link
@@ -242,11 +242,11 @@ def test_the_most_recent_edit_is_named_first(tmp_path):
     """The caller prints one name and a count of the rest, so the name it prints
     has to be the edit the reader is currently wondering about."""
     source_file(tmp_path, "app/server.py", STARTED + 60)
-    source_file(tmp_path, "retrieval/urlvestigia.py", STARTED + 120)
+    source_file(tmp_path, "retrieval/source_ledger.py", STARTED + 120)
     source_file(tmp_path, "app/templates/index.html", STARTED + 30)
 
     assert hosting.edited_since(STARTED, root=tmp_path) == [
-        "retrieval/urlvestigia.py", "app/server.py", "app/templates/index.html"]
+        "retrieval/source_ledger.py", "app/server.py", "app/templates/index.html"]
 
 
 def test_what_the_server_never_loads_is_not_a_stale_server(tmp_path):

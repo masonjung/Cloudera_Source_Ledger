@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# URLvestigia — deploy the accelerator to a provisioned CDP environment.
+# Source Ledger — deploy the accelerator to a provisioned CDP environment.
 #
 # Deploy is not provisioning. This script assumes the stack from
 # infra/cdp/provision.sh already exists and only ships what changed:
@@ -32,10 +32,10 @@ done
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-CDP_ENV="${CDP_ENV:-urlvestigia-dev}"
+CDP_ENV="${CDP_ENV:-source-ledger-dev}"
 CDE_SERVICE="${CDE_SERVICE:-${CDP_ENV}-cde}"
-CDE_VC="${CDE_VC:-urlvestigia-vc}"
-CDE_RESOURCE="${CDE_RESOURCE:-urlvestigia-jobs}"
+CDE_VC="${CDE_VC:-source-ledger-vc}"
+CDE_RESOURCE="${CDE_RESOURCE:-source-ledger-jobs}"
 AI_WORKBENCH="${AI_WORKBENCH:-${CDP_ENV}-ai}"
 RANGER_URL="${RANGER_URL:-https://${CDP_ENV}-ranger.cloudera.site}"
 
@@ -52,7 +52,7 @@ run() {
 
 if ! $EXECUTE; then
   cat <<'BANNER'
-URLvestigia deploy — DRY RUN
+Source Ledger deploy — DRY RUN
 ======================
 Nothing will be changed. Every command that would run is printed below.
 Re-run with --execute to deploy.
@@ -109,17 +109,17 @@ deploy_app() {
   step "Serve layer — publish to Cloudera AI"
   run cdp ml create-application \
     --workspace-name "${AI_WORKBENCH}" \
-    --name urlvestigia \
-    --subdomain urlvestigia \
+    --name source_ledger \
+    --subdomain source_ledger \
     --script "app/server.py" \
     --kernel python3 \
     --cpu 1 --memory 2 || true
 
   run cdp ml restart-application \
     --workspace-name "${AI_WORKBENCH}" \
-    --name urlvestigia
+    --name source_ledger
 
-  echo "    → https://${CDP_ENV}-ai.cloudera.site/urlvestigia"
+  echo "    → https://${CDP_ENV}-ai.cloudera.site/source_ledger"
 }
 
 case "$TARGET" in

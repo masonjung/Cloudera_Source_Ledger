@@ -15,7 +15,7 @@ Things you run by hand. Nothing here is part of the deployed accelerator.
 ## Search from the terminal
 
 ```bash
-python scripts/cli.py search "GLP-1 receptor agonist adverse events" --provider openalex
+python scripts/cli.py search "Cloudera AI inference service" --provider openalex
 python scripts/cli.py search "iceberg compaction" --backend duckduckgo --timelimit y -n 25
 python scripts/cli.py list --urls
 python scripts/cli.py export --format csv --out review-appendix.csv
@@ -72,7 +72,7 @@ make new VERTICAL=healthcare USECASE=readmission-risk
 
 Creates `../cloudera-forge-healthcare-readmission-risk/` as a sibling directory:
 copies the template, rewrites the accelerator name through the docs and Makefile,
-clears URLvestigia's worked example out of the layer directories while keeping their
+clears Source Ledger's worked example out of the layer directories while keeping their
 `README.md` guidance, and initialises a fresh git repo with one commit.
 
 It refuses to overwrite an existing directory. Pass `--dry-run` to see the plan

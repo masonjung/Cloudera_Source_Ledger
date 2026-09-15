@@ -15,10 +15,10 @@ import pytest
 @pytest.fixture
 def recorded(temp_db):
     """Two searches: one that had an option and skipped it, one that has none."""
-    temp_db.save_search("glp-1 adverse events", ["https://a.example/1"],
+    temp_db.save_search("Cloudera AI Workbench model deployment", ["https://a.example/1"],
                         provider="ddgs", region="wt-wt", safesearch="moderate",
                         timelimit="", backend="duckduckgo", max_results=10)
-    temp_db.save_search("semaglutide pharmacovigilance",
+    temp_db.save_search("Cloudera AI inference service",
                         ["https://b.example/1", "https://b.example/2"],
                         provider="openalex", region=None, safesearch=None,
                         timelimit="y", backend=None, max_results=10)
@@ -30,8 +30,8 @@ def test_ask_returns_the_columns_it_was_asked_for(recorded):
         "SELECT query, timelimit FROM searches ORDER BY id")
 
     assert columns == ["query", "timelimit"]
-    assert rows == [("glp-1 adverse events", ""),
-                    ("semaglutide pharmacovigilance", "y")]
+    assert rows == [("Cloudera AI Workbench model deployment", ""),
+                    ("Cloudera AI inference service", "y")]
 
 
 def test_the_record_cannot_be_written_through_ask(recorded):
@@ -98,13 +98,14 @@ def test_searches_counts_the_urls_of_each_search(recorded):
     columns, rows = present.ask(present.SEARCHES, (10,))
     urls = {row[columns.index("query")]: row[columns.index("urls")] for row in rows}
 
-    assert urls == {"glp-1 adverse events": 1, "semaglutide pharmacovigilance": 2}
+    assert urls == {"Cloudera AI Workbench model deployment": 1,
+                    "Cloudera AI inference service": 2}
 
 
 def test_searches_is_newest_first(recorded):
     markup = present.searches(limit=10)
 
-    assert markup.index("semaglutide") < markup.index("glp-1")
+    assert markup.index("inference") < markup.index("Workbench")
 
 
 # --- the record as a file ----------------------------------------------------
@@ -130,8 +131,8 @@ def test_export_spells_null_out_because_csv_has_only_one_empty_cell(recorded, tm
     path, _ = present.export(tmp_path / "appendix.csv")
     rows = list(csv.DictReader(path.open(encoding="utf-8")))
 
-    unsupported = next(r for r in rows if r["query"] == "semaglutide pharmacovigilance")
-    unused = next(r for r in rows if r["query"] == "glp-1 adverse events")
+    unsupported = next(r for r in rows if r["query"] == "Cloudera AI inference service")
+    unused = next(r for r in rows if r["query"] == "Cloudera AI Workbench model deployment")
 
     assert unsupported["region"] == "NULL"   # this corpus has no such option
     assert unused["timelimit"] == ""         # it has one, and this search skipped it
@@ -182,7 +183,7 @@ def test_export_keeps_rank_as_stored(recorded, tmp_path):
     second source of truth for rank."""
     path, _ = present.export(tmp_path / "appendix.csv")
     rows = list(csv.DictReader(path.open(encoding="utf-8")))
-    positions = [r["position"] for r in rows if r["query"] == "semaglutide pharmacovigilance"]
+    positions = [r["position"] for r in rows if r["query"] == "Cloudera AI inference service"]
 
     assert positions == ["0", "1"]
 
