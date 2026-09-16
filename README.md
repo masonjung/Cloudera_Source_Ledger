@@ -193,6 +193,14 @@ Two things differ from a laptop, and the notebook handles both:
   APIs that do not block on IP reputation. See
   [`governance/model_cards/source-ledger-retrieval.md`](governance/model_cards/source-ledger-retrieval.md).
 
+**Or launch it, without opening anything.**
+[`.project-metadata.yaml`](.project-metadata.yaml) makes the repository an AMP: New
+Project → AMPs → *Git URL*, and Cloudera AI installs the runtime, runs the same
+preflight, creates the preflight and backup jobs, and starts the dashboard as an
+Application. It touches only the layers that run today — the CDE, CDW and SDX tier is
+deployed separately through [`.cicd/deploy.sh`](.cicd/deploy.sh). Read the note on
+authentication under [Prerequisites](#prerequisites) before sharing the Application URL.
+
 **As a library:**
 
 ```python
@@ -290,6 +298,7 @@ Design decisions and the request path in full:
 | `quickstart.ipynb` | Run All: preflight, one recorded search, the record in HTML and in SQL, and the export |
 | `requirements-notebook.txt` | Jupyter, kept out of `make install` |
 | `METADATA.yaml` | Catalog metadata for the Cloudera blueprint website |
+| `.project-metadata.yaml` | AMP launch descriptor — what Cloudera AI runs to install and start it |
 | `Makefile` | `make help` lists every target |
 
 ## Prerequisites
