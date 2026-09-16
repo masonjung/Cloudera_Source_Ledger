@@ -1,15 +1,13 @@
 # Cloudera Blueprint: Source Ledger
 
-**A governed URL table**
-
 ## Table of Contents
 
 - [Overview](#overview)
 - [Demo](#demo)
 - [Use Case](#use-case)
 - [Key Features](#key-features)
-- [Quickstart](#quickstart)
-- [Architecture / Software Components](#architecture)
+- [Quickstart / Guide](#quickstart--guide)
+- [Architecture / Software Components](#architecture--software-components)
 - [Target Audience](#target-audience)
 - [Repository Structure](#repository-structure)
 - [Prerequisites](#prerequisites)
@@ -94,8 +92,6 @@ scorecard: [`docs/BUSINESS_CASE.md`](docs/BUSINESS_CASE.md).
 - **Links only, never page content.** The blueprint records where an answer was found
   and never retrieves or stores the page itself, which keeps the governance surface
   small by construction.
-
-<a id="quickstart"></a>
 
 ## Quickstart / Guide
 
@@ -208,31 +204,33 @@ deduplicated, in rank order. The support matrix is in
 [`data/record.py`](data/record.py) instead — `record.run("...", provider="arxiv")`
 returns the URLs and writes the row.
 
-<a id="architecture"></a>
-
 ## Architecture / Software Components
 
 A synchronous request path that runs today, and a batch path written against the same
 schema that has never been executed against a real cluster.
 
 ```mermaid
-flowchart LR
-    subgraph SYNC["Synchronous request — runs today"]
-        SERVE["Serve · app/<br/>FastAPI + Jinja2"]
-        AI["AI · retrieval/<br/>text_to_urls()"]
-        SQLITE[("SQLite · data/db.py")]
-        SERVE --> AI --> SQLITE
+flowchart TB
+    subgraph GOV["Governed by SDX — Ranger, Atlas"]
+        direction TB
+        subgraph SYNC["Synchronous request — runs today"]
+            direction LR
+            SERVE["Serve · app/<br/>FastAPI + Jinja2"] --> AI["AI · retrieval/<br/>text_to_urls()"] --> SQLITE[("SQLite · data/db.py")]
+        end
+        subgraph BATCH["Batch path — designed, never run for real"]
+            direction LR
+            INGEST["Ingest · data/ingest/"] --> ICEBERG[("Iceberg · data/iceberg/")] --> PROCESS["Process · pipelines/<br/>enrichment MERGE"]
+        end
+        SQLITE -. "scheduled job" .-> INGEST
     end
-    AI -.-> WEB["ddgs engines · Wikipedia<br/>OpenAlex · arXiv"]
-    subgraph BATCH["Batch path — designed, never run for real"]
-        INGEST["Ingest · data/ingest/"]
-        ICEBERG[("Iceberg · data/iceberg/")]
-        PROCESS["Process · pipelines/<br/>enrichment MERGE"]
-        INGEST --> ICEBERG --> PROCESS
-    end
-    SQLITE -. "scheduled job" .-> INGEST
-    GOV["Governance · SDX (Ranger, Atlas)"] -.-> SYNC
-    GOV -.-> BATCH
+    AI -.-> WEB["ddgs engines · Wikipedia<br/>OpenAlex · arXiv<br/>(third-party, ungoverned)"]
+
+    classDef sync fill:#dbeafe,stroke:#1d4ed8,color:#1e3a5f;
+    classDef batch fill:#f3f4f6,stroke:#6b7280,color:#374151;
+    classDef ext fill:#fef3c7,stroke:#b45309,color:#78350f;
+    class SERVE,AI,SQLITE sync;
+    class INGEST,ICEBERG,PROCESS batch;
+    class WEB ext;
 ```
 
 | Layer | Component | Cloudera service | State |

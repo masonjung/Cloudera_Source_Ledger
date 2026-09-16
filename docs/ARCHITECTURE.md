@@ -15,26 +15,26 @@ before treating any of it as deployed. See "Planned platform integration" in
 ## The stack
 
 ```mermaid
-flowchart LR
-    subgraph SYNC["Synchronous request — runs today"]
-        SERVE["Serve<br/>app/<br/>FastAPI + Jinja2"]
-        AI["AI<br/>retrieval/<br/>text_to_urls()"]
-        SQLITE[("SQLite tier<br/>data/db.py<br/>running today")]
-        SERVE --> AI --> SQLITE
+flowchart TB
+    subgraph GOV["Governed by SDX — Ranger, Atlas (governance/)"]
+        direction TB
+        subgraph SYNC["Synchronous request — runs today"]
+            direction LR
+            SERVE["Serve<br/>app/<br/>FastAPI + Jinja2"] --> AI["AI<br/>retrieval/<br/>text_to_urls()"] --> SQLITE[("SQLite tier<br/>data/db.py<br/>running today")]
+        end
+
+        subgraph BATCH["Batch path — designed, never run for real"]
+            direction LR
+            INGEST["Ingest<br/>data/ingest/<br/>SQLite to Iceberg loader"] --> ICEBERG[("Iceberg tier<br/>data/iceberg/<br/>DDL written, never applied")] --> PROCESS["Process<br/>pipelines/<br/>URL enrichment (MERGE)"]
+        end
+
+        SQLITE -. "scheduled job" .-> INGEST
     end
 
-    subgraph BATCH["Batch path — designed, never run for real"]
-        INGEST["Ingest<br/>data/ingest/<br/>SQLite to Iceberg loader"]
-        ICEBERG[("Iceberg tier<br/>data/iceberg/<br/>DDL written, never applied")]
-        PROCESS["Process<br/>pipelines/<br/>URL enrichment (MERGE)"]
-        INGEST --> ICEBERG --> PROCESS
-    end
-
-    SQLITE -. "scheduled job" .-> INGEST
-
-    GOV["Governance — SDX (Ranger, Atlas)<br/>governance/ — policies written, never imported"]
-    GOV -.-> SYNC
-    GOV -.-> BATCH
+    classDef sync fill:#dbeafe,stroke:#1d4ed8,color:#1e3a5f;
+    classDef batch fill:#f3f4f6,stroke:#6b7280,color:#374151;
+    class SERVE,AI,SQLITE sync;
+    class INGEST,ICEBERG,PROCESS batch;
 ```
 
 ## Layer by layer
