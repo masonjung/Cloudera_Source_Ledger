@@ -62,7 +62,7 @@ def test_a_user_install_is_made_visible_even_on_its_first_run(installs, monkeypa
     already exists. The first `--user` install in a fresh managed session -- a new
     Cloudera AI project -- creates it, so the modules land somewhere this
     interpreter was never told to look and the check below fails an install that
-    worked. That failure exits the AMP's first task non-zero and stops the launch."""
+    worked, and the quickstart reports a missing dependency it has just installed."""
     user_site = tmp_path / "lib" / "python3.11" / "site-packages"
     user_site.mkdir(parents=True)
     monkeypatch.setattr(kernel.site, "ENABLE_USER_SITE", True)

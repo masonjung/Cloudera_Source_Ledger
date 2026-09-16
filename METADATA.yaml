@@ -17,11 +17,11 @@ reprise_link: ""                             # Public reprise link. Empty: no wa
 # --- Classification (website filters) ---
 catalog_classification:
   - Developer Example                   # Options: Enterprise Blueprint | Research | Launchable (AMP) | Developer Example
-  - Launchable (AMP)                    # .project-metadata.yaml ships, so it launches as well as forks
-launchable: True                            # .project-metadata.yaml installs the retrieval and Serve
-                                             # layers and starts the dashboard. Those are the layers that
-                                             # run; the AMP does not touch the CDE/CDW/SDX tier, which is
-                                             # deployed separately through .cicd/deploy.sh.
+launchable: False                           # No launch descriptor ships, so the repository forks and
+                                             # runs rather than launching in one click. The layers that
+                                             # run today are started by hand -- `make dev` for the
+                                             # dashboard, quickstart.ipynb in a Cloudera AI session -- and
+                                             # the CDE/CDW/SDX tier is deployed through .cicd/deploy.sh.
 lifecycle_status: Active                     # Maintained, not retired. The retrieval and Serve
                                              # layers are complete and run today; storage ends at
                                              # SQLite and the CDP/Iceberg tier is written but not

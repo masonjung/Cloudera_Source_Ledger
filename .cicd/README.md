@@ -9,7 +9,6 @@ deploying is a separate, deliberate click.
 |---|---|
 | `pipeline.yml` | GitLab CI definition — three stages, deploy gated to `main` and manual |
 | `deploy.sh` | The deploy itself: SDX policies, CDE jobs, Serve layer. Dry-run by default. |
-| `amp_install.py` | First task of the AMP launch — installs the runtime into `~/.local`, then proves it imports |
 
 ## Point GitLab at it
 
