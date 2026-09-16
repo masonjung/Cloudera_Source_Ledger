@@ -11,8 +11,27 @@ dependencies exist.
 
 import importlib
 import importlib.util
+import os
+import site
 import subprocess
 import sys
+
+
+def _see_the_user_site():
+    """Put a just-created user site directory on `sys.path`.
+
+    `site` adds `~/.local/lib/pythonX.Y/site-packages` at startup only if it
+    already exists, so the first `--user` install in a fresh managed session --
+    a new Cloudera AI project, say -- creates a directory this interpreter will
+    never look in. `invalidate_caches()` cannot rescue that: the path is not on
+    `sys.path` at all, and the check below would then fail an install that
+    actually worked.
+    """
+    if not site.ENABLE_USER_SITE:
+        return
+    user_site = site.getusersitepackages()
+    if os.path.isdir(user_site) and user_site not in sys.path:
+        site.addsitedir(user_site)
 
 
 def missing(modules):
@@ -50,7 +69,9 @@ def ensure(modules, requirements, what, say=print):
         return False
 
     # A package installed after the interpreter started is invisible until the
-    # import system is told to look again.
+    # import system is told to look again -- and, when pip had to fall back to
+    # `--user`, until the directory it created is on `sys.path` at all.
+    _see_the_user_site()
     importlib.invalidate_caches()
     if missing(modules):
         say(f"  Installed, but {', '.join(missing(modules))} is still not importable.")

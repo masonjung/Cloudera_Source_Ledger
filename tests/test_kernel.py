@@ -56,6 +56,24 @@ def test_a_fresh_install_is_made_visible_to_the_import_system(installs, monkeypa
     assert looked
 
 
+def test_a_user_install_is_made_visible_even_on_its_first_run(installs, monkeypatch,
+                                                              tmp_path):
+    """`site` puts the user site directory on `sys.path` at startup only if it
+    already exists. The first `--user` install in a fresh managed session -- a new
+    Cloudera AI project -- creates it, so the modules land somewhere this
+    interpreter was never told to look and the check below fails an install that
+    worked. That failure exits the AMP's first task non-zero and stops the launch."""
+    user_site = tmp_path / "lib" / "python3.11" / "site-packages"
+    user_site.mkdir(parents=True)
+    monkeypatch.setattr(kernel.site, "ENABLE_USER_SITE", True)
+    monkeypatch.setattr(kernel.site, "getusersitepackages", lambda: str(user_site))
+    monkeypatch.setattr(sys, "path", list(sys.path))
+    installs(["ddgs"], [])
+
+    assert kernel.ensure(["ddgs"], "requirements.txt", "search") is True
+    assert str(user_site) in sys.path
+
+
 def test_a_failed_install_reports_the_command_to_run_by_hand(monkeypatch):
     """Never raises. A quickstart that dies on its dependency cell has failed at
     the one job it has, so the cell says what to type and carries on."""
