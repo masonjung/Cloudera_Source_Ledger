@@ -31,10 +31,12 @@ import kernel  # noqa: E402
 REQUIREMENTS = ROOT / "app" / "requirements.txt"
 
 # What has to import afterwards, by module name rather than by distribution name —
-# python-multipart installs as `multipart`, and a check against the wrong name is a
-# check that always passes. FastAPI cannot parse a form post without it, which is
-# every write route in the dashboard.
-MODULES = ("fastapi", "uvicorn", "jinja2", "multipart", "ddgs")
+# python-multipart installs as `python_multipart`, and a check against the wrong name
+# is a check that always passes. FastAPI cannot parse a form post without it, which is
+# every write route in the dashboard. Its older `multipart` spelling still resolves,
+# but only through a compatibility shim the project has deprecated: checking that name
+# would fail this task, and so the whole launch, on an upgrade that broke nothing.
+MODULES = ("fastapi", "uvicorn", "jinja2", "python_multipart", "ddgs")
 
 
 def main():

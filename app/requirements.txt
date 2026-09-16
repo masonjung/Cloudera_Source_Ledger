@@ -12,4 +12,5 @@
 fastapi>=0.110.0
 uvicorn[standard]>=0.27.0
 jinja2>=3.1.0
-python-multipart>=0.0.9    # required by FastAPI to parse form posts
+python-multipart>=0.0.12   # required by FastAPI to parse form posts; 0.0.12 is
+                           # the first release with the python_multipart module name
