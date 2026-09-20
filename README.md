@@ -1,4 +1,27 @@
-# Cloudera Blueprint: Source Ledger
+# Source Ledger
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](pyproject.toml)
+[![Cloudera Blueprint](https://img.shields.io/badge/Cloudera-Blueprint-f96702.svg)](METADATA.yaml)
+[![Stars](https://img.shields.io/github/stars/masonjung/Cloudera_Source_Ledger?logo=github)](https://github.com/masonjung/Cloudera_Source_Ledger/stargazers)
+[![Forks](https://img.shields.io/github/forks/masonjung/Cloudera_Source_Ledger?logo=github)](https://github.com/masonjung/Cloudera_Source_Ledger/network/members)
+[![Watchers](https://img.shields.io/github/watchers/masonjung/Cloudera_Source_Ledger?logo=github)](https://github.com/masonjung/Cloudera_Source_Ledger/watchers)
+
+<div align="center">
+  <img width="512" height="280" alt="image" src="https://github.com/user-attachments/assets/263b66db-ec42-4bb0-a3f9-79f8ba33c8ee" />
+</div>
+
+
+Source Ledger turns a search prompt into a queryable table of source URLs — so a search becomes an artifact instead of an activity. On the web browser, what we can get from the search is URLs that we could click to access to the website. It does not store the searched URLs nor search hyperparameters. Also, we do not know about the type of the engine (e.g., Brave Search, Google Search, DuckDuckGo search, Bing search etc.), scope, and other constraints (e.g., region, time, safe search) that we used, undermining the specificity and multiple features that contributed to the search results. 
+
+Search results are usually blow away after the initial search. We do not remember what we searched for, and how it has been searched.  
+
+We introduce Cloudera Source Ledger, which tabulates every search results as a governed record — the engine used, the query, URLs, and the search parameters applied — with heterogeneous search engines across multiple domains.
+The program converts individual, siloed searching into a shared, queryable table the whole team can draw on. You can turn hours of repeated ad hoc research into a reusable asset and cuts redundant search costs. 
+
+**Why Cloudera:** this is built for teams to reuse, not individuals to run once — the record is the product, not the search itself.
+
+
 
 ## Table of Contents
 
@@ -14,55 +37,37 @@
 - [Hardware Requirements](#hardware-requirements)
 - [Documentation](#documentation)
 
-## Overview
-
-Source Ledger turns a natural-language question into a persisted, reviewable table of
-source URLs: ask a question, get ranked links, and keep the query, provider, engines,
-region, and time window that produced them — so a search becomes an artifact instead of
-an activity. It is for **researchers and analysts** who need discovery captured rather
-than merely performed, and for the **architects and engineers** who will fork it as a
-starting point. **Why Cloudera:** the value here is the record, not the search, and a
-search record earns its keep only when it is governed, queryable, and shared — SQLite
-serves one analyst, Iceberg on Cloudera Data Warehouse serves an organisation, and SDX
-governs both without the application changing. It is the reference Cloudera Blueprint:
-one thin capability wired across all five layers of the standard stack (Ingest →
-Lakehouse → Process → AI → Serve), small enough to read in an afternoon, free to run
-with no API keys or accounts, and started on a laptop with one command — with
-**retrieval, Serve, and local SQLite storage complete and running today, and the CDP
-platform layers written against the same schema but never executed.**
-
 ## Demo
 
-No Reprise walkthrough has been recorded yet, so `reprise_link` in
-[`METADATA.yaml`](METADATA.yaml) is intentionally empty.
+<img width="1153" height="841" alt="image" src="https://github.com/user-attachments/assets/4c6c6a0b-73d8-4924-88d8-dd6f70f21dd3" />
+<img width="1126" height="812" alt="image" src="https://github.com/user-attachments/assets/c89f8fe8-7304-4bf0-bb3d-2f1757f6450f" />
+<img width="1161" height="787" alt="image" src="https://github.com/user-attachments/assets/69e7b025-8742-4d3e-bd66-9e3039d3ae91" />
 
-Until one exists, [`docs/EXAMPLE.md`](docs/EXAMPLE.md) is the evidence you can read
-**without cloning anything**: a single question followed end to end — the search call,
-the rows it writes, the SQLite → Iceberg load plan, the enrichment `MERGE`, and the
-Ranger policy that governs the result — with the actual SQL and output printed at each
-hop. It takes about 20 minutes on a laptop if you do decide to run it, and it is the
-fastest way to judge whether the blueprint does what this page claims.
+
 
 ## Use Case
 
-Research that starts with "find me the sources on X" is done in a browser and lost in a
-browser. Tabs close, links live in someone's history, and which query produced which
-results is unrecoverable — so the search cannot be reviewed, repeated, or handed over.
-In regulated discovery this is not an inconvenience but a finding: systematic reviews
-and pharmacovigilance already require a defensible record of *how* a search was run, and
-that record is today reconstructed by hand, if at all.
 
-**The business outcome is a governed, queryable search record.** Every URL carries the
-query and the options that produced it, so a search can be reproduced or audited months
-later. URLs returned by more than one corpus are kept as independent corroboration
-rather than collapsed as noise. The store is governable through SDX like any other
-table, which is what makes the record admissible inside an existing data-governance
-regime instead of alongside it.
+1. **Record.** Every search is captured, not lost — the query, the options, and the
+   URLs it returned are written down at the moment the search runs, so nothing depends
+   on someone's memory or browser history.
 
-**Industry alignment is horizontal.** The need appears wherever discovery has to be
-defensible; the sharpest fit is regulated research — systematic review,
-pharmacovigilance, competitive and patent scanning. Full reasoning and the qualification
-scorecard: [`docs/BUSINESS_CASE.md`](docs/BUSINESS_CASE.md).
+2. **Enables team work.** A search stops being one person's private activity and
+   becomes something a team can pick up, review, or continue — discovery is handed off
+   instead of re-run from scratch.
+
+3. **Same format, queryable.** Every search lands in the same governed schema, so the
+   whole history of searches — anyone's, any time — can be queried, filtered, and
+   compared like any other table, not scattered across individual habits or tools.
+
+4. **The synergy.** Together, a *record* that's *shared* and *uniformly queryable* turns
+   search from a one-off task into organizational memory: the team doesn't just avoid
+   repeating work, it can ask new questions of everything that's already been searched.
+
+5. **URLs as intellectual property, not one-time usage.** A URL found once is a
+   disposable click; a URL captured into the ledger is a reusable asset — attributable,
+   corroborated across corpora, and worth owning rather than worth using once and
+   losing.
 
 ## Key Features
 
@@ -209,29 +214,8 @@ returns the URLs and writes the row.
 A synchronous request path that runs today, and a batch path written against the same
 schema that has never been executed against a real cluster.
 
-```mermaid
-flowchart TB
-    subgraph GOV["Governed by SDX — Ranger, Atlas"]
-        direction TB
-        subgraph SYNC["Synchronous request — runs today"]
-            direction LR
-            SERVE["Serve · app/<br/>FastAPI + Jinja2"] --> AI["AI · retrieval/<br/>text_to_urls()"] --> SQLITE[("SQLite · data/db.py")]
-        end
-        subgraph BATCH["Batch path — designed, never run for real"]
-            direction LR
-            INGEST["Ingest · data/ingest/"] --> ICEBERG[("Iceberg · data/iceberg/")] --> PROCESS["Process · pipelines/<br/>enrichment MERGE"]
-        end
-        SQLITE -. "scheduled job" .-> INGEST
-    end
-    AI -.-> WEB["ddgs engines · Wikipedia<br/>OpenAlex · arXiv<br/>(third-party, ungoverned)"]
+<img width="1053" height="523" alt="image" src="https://github.com/user-attachments/assets/dd919c8d-7771-4c97-92ee-c7dc2aaed3c9" />
 
-    classDef sync fill:#dbeafe,stroke:#1d4ed8,color:#1e3a5f;
-    classDef batch fill:#f3f4f6,stroke:#6b7280,color:#374151;
-    classDef ext fill:#fef3c7,stroke:#b45309,color:#78350f;
-    class SERVE,AI,SQLITE sync;
-    class INGEST,ICEBERG,PROCESS batch;
-    class WEB ext;
-```
 
 | Layer | Component | Cloudera service | State |
 | --- | --- | --- | --- |
@@ -312,7 +296,7 @@ leave. See [`governance/DATA_CLASSIFICATION.md`](governance/DATA_CLASSIFICATION.
 
 | Deployment | Minimum |
 | --- | --- |
-| Demo (everything that runs today) | 2 vCPU, 4 GB RAM, <1 GB disk — a laptop |
+| Demo (everything that runs today) | 2 vCPU, 4 GB RAM, <1 GB disk |
 | Production / enterprise (target, never provisioned) | CDP `LIGHT_DUTY` Data Lake; AI Workbench on `m5.xlarge`; CDE workers on `m5.2xlarge`, autoscaling 0–4. No GPU — there is no model here. |
 
 Defaults live in [`infra/terraform/variables.tf`](infra/terraform/variables.tf). Size up
@@ -332,4 +316,10 @@ from measured load.
 - Every directory carries its own `README.md` explaining what goes there and which
   Cloudera tool automates it.
 
-Licensed under [Apache 2.0](LICENSE).
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
+
+## Disclaimer
+
+*This blueprint is intended for Proof-of-Concept and research use only. It is not designed for production deployment. Use in production environments is at the user's own risk. The authors and contributors accept no liability for operational impacts or damages.*
