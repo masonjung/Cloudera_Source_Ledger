@@ -316,6 +316,15 @@ from measured load.
 - Every directory carries its own `README.md` explaining what goes there and which
   Cloudera tool automates it.
 
+## Next steps after securing the URL table 
+1. Sentiment analysis
+2. Topic modeling
+3. Knowledge graph construction
+4. Summarization and multi-document summarization
+5. AI-generated material detection
+6. RAG system for the grounding
+7. Media monitoring
+
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
