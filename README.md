@@ -12,12 +12,11 @@
 </div>
 
 
-Source Ledger turns a search prompt into a queryable table of source URLs — so a search becomes an artifact instead of an activity. On the web browser, what we can get from the search is URLs that we could click to access to the website. It does not store the searched URLs nor search hyperparameters. Also, we do not know about the type of the engine (e.g., Brave Search, Google Search, DuckDuckGo search, Bing search etc.), scope, and other constraints (e.g., region, time, safe search) that we used, undermining the specificity and multiple features that contributed to the search results. 
+Source Ledger turns a search prompt into a queryable table of source URLs — so a search becomes an artifact instead of an activity. On the web browser, what we can get from the search is URLs that we could click to access to the website. It does not store the searched URLs nor search hyperparameters. Also, we do not know about the type of the engine (e.g., Brave Search, Google Search, DuckDuckGo search, Bing search etc.), scope, and other constraints (e.g., region, time, safe search) that we used, undermining the specificity and multiple features that contributed to the search results.
 
-Search results are usually blow away after the initial search. We do not remember what we searched for, and how it has been searched.  
+Search results are usually blown away after the initial search. We do not remember what we searched for, and how it has been searched.
 
-We introduce Cloudera Source Ledger, which tabulates every search results as a governed record — the engine used, the query, URLs, and the search parameters applied — with heterogeneous search engines across multiple domains.
-The program converts individual, siloed searching into a shared, queryable table the whole team can draw on. You can turn hours of repeated ad hoc research into a reusable asset and cuts redundant search costs. 
+We introduce Cloudera Source Ledger, which tabulates every search result as a governed record — the engine used, the query, URLs, and the search parameters applied — with heterogeneous search engines across multiple domains. The program converts individual, siloed searching into a shared, queryable table the whole team can draw on. You can turn hours of repeated ad hoc research into a reusable asset and cut redundant search costs.
 
 **Why Cloudera:** this is built for teams to reuse, not individuals to run once — the record is the product, not the search itself.
 
