@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6b7a"/>
+    </marker>
+    <marker id="arrowO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f96702"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="540" fill="#fafbfc"/>
+  <text x="480" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#232f3e">Source Ledger — Natural-Language Text to a Governed Table of URLs</text>
+
+  <!-- Cloudera platform container -->
+  <rect x="24" y="52" width="680" height="378" rx="14" fill="#ffffff" stroke="#f96702" stroke-width="2"/>
+  <text x="44" y="76" font-size="14" font-weight="700" fill="#f96702">Cloudera platform — Cloudera AI · CDE · Iceberg on CDW · SDX</text>
+
+  <!-- Batch path (unproven) -->
+  <rect x="44" y="90" width="640" height="128" rx="10" fill="#ffffff" stroke="#8aa2b8" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="60" y="110" font-size="12" font-weight="700" fill="#232f3e">Batch path — designed, not yet run on a cluster</text>
+  <text x="668" y="110" text-anchor="end" font-size="10" font-style="italic" fill="#5f6b7a">schema written · nightly, idempotent</text>
+
+  <rect x="64" y="122" width="180" height="80" rx="8" fill="#eef3f8" stroke="#8aa2b8" stroke-dasharray="5,4"/>
+  <text x="154" y="146" text-anchor="middle" font-size="11" font-weight="600" fill="#232f3e">Process · pipelines/</text>
+  <text x="154" y="164" text-anchor="middle" font-size="10" fill="#5f6b7a">URL enrichment MERGE (Spark)</text>
+  <text x="154" y="182" text-anchor="middle" font-size="10" fill="#5f6b7a">CDE · never executed</text>
+
+  <rect x="274" y="122" width="180" height="80" rx="8" fill="#eef3f8" stroke="#8aa2b8" stroke-dasharray="5,4"/>
+  <text x="364" y="146" text-anchor="middle" font-size="11" font-weight="600" fill="#232f3e">Iceberg · data/iceberg/</text>
+  <text x="364" y="164" text-anchor="middle" font-size="10" fill="#5f6b7a">raw_searches · curated_urls</text>
+  <text x="364" y="182" text-anchor="middle" font-size="10" fill="#5f6b7a">CDW · DDL never applied</text>
+
+  <rect x="484" y="122" width="180" height="80" rx="8" fill="#eef3f8" stroke="#8aa2b8" stroke-dasharray="5,4"/>
+  <text x="574" y="146" text-anchor="middle" font-size="11" font-weight="600" fill="#232f3e">Ingest · data/ingest/</text>
+  <text x="574" y="164" text-anchor="middle" font-size="10" fill="#5f6b7a">SQLite → Iceberg loader</text>
+  <text x="574" y="182" text-anchor="middle" font-size="10" fill="#5f6b7a">CDE · never executed</text>
+
+  <line x1="484" y1="162" x2="458" y2="162" stroke="#5f6b7a" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <line x1="274" y1="162" x2="248" y2="162" stroke="#5f6b7a" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <!-- Synchronous request (runs today) -->
+  <rect x="44" y="246" width="640" height="140" rx="10" fill="#ffffff" stroke="#8aa2b8" stroke-width="1.5"/>
+  <text x="60" y="266" font-size="12" font-weight="700" fill="#232f3e">Synchronous request — runs today (locally)</text>
+
+  <rect x="64" y="278" width="180" height="72" rx="8" fill="#eef3f8" stroke="#8aa2b8"/>
+  <text x="154" y="300" text-anchor="middle" font-size="11" font-weight="600" fill="#232f3e">Serve · app/</text>
+  <text x="154" y="318" text-anchor="middle" font-size="10" fill="#5f6b7a">FastAPI + Jinja2 dashboard</text>
+  <text x="154" y="334" text-anchor="middle" font-size="10" fill="#5f6b7a">Cloudera AI Application</text>
+
+  <rect x="274" y="278" width="180" height="72" rx="8" fill="#fdf3ec" stroke="#e0b394"/>
+  <text x="364" y="300" text-anchor="middle" font-size="11" font-weight="600" fill="#232f3e">AI · retrieval/</text>
+  <text x="364" y="318" text-anchor="middle" font-size="10" fill="#5f6b7a">text_to_urls() metasearch</text>
+  <text x="364" y="334" text-anchor="middle" font-size="10" fill="#5f6b7a">Cloudera AI Workbench</text>
+
+  <rect x="484" y="278" width="180" height="72" rx="8" fill="#eef3f8" stroke="#8aa2b8"/>
+  <text x="574" y="300" text-anchor="middle" font-size="11" font-weight="600" fill="#232f3e">SQLite · data/db.py</text>
+  <text x="574" y="318" text-anchor="middle" font-size="10" fill="#5f6b7a">query · options · URLs</text>
+  <text x="574" y="334" text-anchor="middle" font-size="10" fill="#5f6b7a">one transaction per search</text>
+
+  <line x1="244" y1="314" x2="270" y2="314" stroke="#5f6b7a" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <line x1="454" y1="314" x2="480" y2="314" stroke="#5f6b7a" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <!-- Scheduled job: SQLite -> Ingest (unproven) -->
+  <line x1="574" y1="276" x2="574" y2="206" stroke="#5f6b7a" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+  <text x="582" y="236" font-size="10" fill="#5f6b7a">scheduled job · 02:00</text>
+
+  <!-- SDX governance strip (unproven) -->
+  <rect x="274" y="396" width="410" height="24" rx="6" fill="#ffffff" stroke="#8aa2b8" stroke-dasharray="5,4"/>
+  <text x="479" y="412" text-anchor="middle" font-size="10" fill="#5f6b7a">SDX — Ranger policies · Atlas tags (governance/sdx/) — never imported</text>
+
+  <!-- Provisioning (unproven) -->
+  <rect x="730" y="90" width="206" height="128" rx="12" fill="#ffffff" stroke="#8aa2b8" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="833" y="114" text-anchor="middle" font-size="12" font-weight="700" fill="#232f3e">Provisioning · infra/</text>
+  <text x="833" y="134" text-anchor="middle" font-size="10" fill="#5f6b7a">cdp/provision.sh · terraform/</text>
+  <text x="833" y="150" text-anchor="middle" font-size="10" fill="#5f6b7a">.cicd/deploy.sh</text>
+  <text x="833" y="166" text-anchor="middle" font-size="10" fill="#5f6b7a">dry-run unless --execute</text>
+  <text x="833" y="190" text-anchor="middle" font-size="10" fill="#5f6b7a" font-style="italic">never run on a real environment</text>
+
+  <!-- External search endpoints -->
+  <rect x="730" y="296" width="206" height="100" rx="12" fill="#fdf3ec" stroke="#f96702" stroke-width="1.5"/>
+  <text x="833" y="320" text-anchor="middle" font-size="13" font-weight="700" fill="#232f3e">Public search endpoints</text>
+  <text x="833" y="340" text-anchor="middle" font-size="10" fill="#5f6b7a">ddgs web engines</text>
+  <text x="833" y="356" text-anchor="middle" font-size="10" fill="#5f6b7a">Wikipedia · OpenAlex · arXiv</text>
+  <text x="833" y="378" text-anchor="middle" font-size="10" fill="#5f6b7a" font-style="italic">third-party · ungoverned</text>
+
+  <polyline points="364,350 364,362 726,362" fill="none" stroke="#f96702" stroke-width="1.8" marker-end="url(#arrowO)"/>
+  <text x="372" y="377" font-size="10" fill="#f96702">search APIs only, never result pages</text>
+
+  <!-- User -->
+  <rect x="30" y="452" width="248" height="52" rx="10" fill="#fdf3ec" stroke="#f96702" stroke-width="1.5"/>
+  <text x="154" y="474" text-anchor="middle" font-size="14" font-weight="600" fill="#232f3e">Researcher browser</text>
+  <text x="154" y="492" text-anchor="middle" font-size="11" fill="#5f6b7a">question in → table of URLs out</text>
+  <line x1="154" y1="450" x2="154" y2="354" stroke="#f96702" stroke-width="1.8" marker-end="url(#arrowO)"/>
+
+  <!-- Footer -->
+  <rect x="300" y="452" width="636" height="52" rx="8" fill="#ffffff" stroke="#c3ccd6"/>
+  <text x="618" y="474" text-anchor="middle" font-size="11" fill="#5f6b7a">Dashed = written but never executed against a real cluster · see README "Status"</text>
+  <text x="618" y="492" text-anchor="middle" font-size="11" fill="#5f6b7a">Serve binds 127.0.0.1 with no auth yet — Harden items in docs/GATES.md</text>
+</svg>

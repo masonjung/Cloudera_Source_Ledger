@@ -233,6 +233,8 @@ flowchart TB
     class WEB ext;
 ```
 
+![Architecture](assets/architecture.svg)
+
 | Layer | Component | Cloudera service | State |
 | --- | --- | --- | --- |
 | Serve | FastAPI + Jinja2 dashboard, server-rendered | Cloudera AI Application | runs locally |

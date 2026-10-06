@@ -1,0 +1,95 @@
+<mxfile host="app.diagrams.net" version="24.0.0">
+  <diagram name="Architecture" id="source-ledger">
+    <mxGraphModel dx="960" dy="540" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="960" pageHeight="540" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="Source Ledger — Natural-Language Text to a Governed Table of URLs" style="text;html=1;fontSize=18;fontStyle=1;fontColor=#232F3E;align=center;" vertex="1" parent="1">
+          <mxGeometry x="140" y="6" width="680" height="28" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cloudera" value="Cloudera platform — Cloudera AI · CDE · Iceberg on CDW · SDX" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F96702;strokeWidth=2;fontSize=14;fontStyle=1;fontColor=#F96702;verticalAlign=top;align=left;spacingLeft=20;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="24" y="52" width="680" height="378" as="geometry" />
+        </mxCell>
+
+        <!-- Batch path: designed, not yet run on a cluster (dashed) -->
+        <mxCell id="batch" value="Batch path — designed, not yet run on a cluster" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8AA2B8;strokeWidth=1.5;dashed=1;fontSize=12;fontStyle=1;fontColor=#232F3E;verticalAlign=top;align=left;spacingLeft=14;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="44" y="90" width="640" height="128" as="geometry" />
+        </mxCell>
+        <mxCell id="batch_note" value="schema written · nightly, idempotent" style="text;html=1;fontSize=10;fontStyle=2;fontColor=#5F6B7A;align=right;" vertex="1" parent="1">
+          <mxGeometry x="468" y="98" width="200" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="process" value="Process · pipelines/&#10;URL enrichment MERGE (Spark)&#10;CDE · never executed" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EEF3F8;strokeColor=#8AA2B8;dashed=1;fontSize=11;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="122" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="iceberg" value="Iceberg · data/iceberg/&#10;raw_searches · curated_urls&#10;CDW · DDL never applied" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EEF3F8;strokeColor=#8AA2B8;dashed=1;fontSize=11;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="274" y="122" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ingest" value="Ingest · data/ingest/&#10;SQLite → Iceberg loader&#10;CDE · never executed" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EEF3F8;strokeColor=#8AA2B8;dashed=1;fontSize=11;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="484" y="122" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ingest_iceberg" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#5F6B7A;strokeWidth=1.6;" edge="1" parent="1" source="ingest" target="iceberg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_iceberg_process" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#5F6B7A;strokeWidth=1.6;" edge="1" parent="1" source="iceberg" target="process">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Synchronous request: runs today -->
+        <mxCell id="sync" value="Synchronous request — runs today (locally)" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8AA2B8;strokeWidth=1.5;fontSize=12;fontStyle=1;fontColor=#232F3E;verticalAlign=top;align=left;spacingLeft=14;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="44" y="246" width="640" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="serve" value="Serve · app/&#10;FastAPI + Jinja2 dashboard&#10;Cloudera AI Application" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EEF3F8;strokeColor=#8AA2B8;fontSize=11;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="278" width="180" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="ai" value="AI · retrieval/&#10;text_to_urls() metasearch&#10;Cloudera AI Workbench" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FDF3EC;strokeColor=#E0B394;fontSize=11;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="274" y="278" width="180" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="sqlite" value="SQLite · data/db.py&#10;query · options · URLs&#10;one transaction per search" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EEF3F8;strokeColor=#8AA2B8;fontSize=11;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="484" y="278" width="180" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="e_serve_ai" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#5F6B7A;strokeWidth=1.6;" edge="1" parent="1" source="serve" target="ai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ai_sqlite" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#5F6B7A;strokeWidth=1.6;" edge="1" parent="1" source="ai" target="sqlite">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_sqlite_ingest" value="scheduled job · 02:00" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#5F6B7A;strokeWidth=1.4;dashed=1;fontSize=10;fontColor=#5F6B7A;labelPosition=right;align=left;spacingLeft=8;" edge="1" parent="1" source="sqlite" target="ingest">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sdx" value="SDX — Ranger policies · Atlas tags (governance/sdx/) — never imported" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8AA2B8;dashed=1;fontSize=10;fontColor=#5F6B7A;" vertex="1" parent="1">
+          <mxGeometry x="274" y="396" width="410" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="infra" value="Provisioning · infra/&#10;cdp/provision.sh · terraform/&#10;.cicd/deploy.sh&#10;dry-run unless --execute&#10;never run on a real environment" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8AA2B8;strokeWidth=1.5;dashed=1;fontSize=11;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="730" y="90" width="206" height="128" as="geometry" />
+        </mxCell>
+
+        <mxCell id="search" value="Public search endpoints&#10;ddgs web engines&#10;Wikipedia · OpenAlex · arXiv&#10;third-party · ungoverned" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#FDF3EC;strokeColor=#F96702;strokeWidth=1.5;fontSize=12;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="730" y="296" width="206" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ai_search" value="search APIs only, never result pages" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;strokeColor=#F96702;strokeWidth=1.8;fontSize=10;fontColor=#F96702;exitX=0.5;exitY=1;entryX=0;entryY=0.66;verticalAlign=top;" edge="1" parent="1" source="ai" target="search">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="364" y="362" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="user" value="Researcher browser&#10;question in → table of URLs out" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#FDF3EC;strokeColor=#F96702;strokeWidth=1.5;fontSize=14;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="30" y="452" width="248" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_serve" style="edgeStyle=none;html=1;endArrow=block;strokeColor=#F96702;strokeWidth=1.8;" edge="1" parent="1" source="user" target="serve">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="footer" value="Dashed = written but never executed against a real cluster · see README &quot;Status&quot;&#10;Serve binds 127.0.0.1 with no auth yet — Harden items in docs/GATES.md" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C3CCD6;fontSize=11;fontColor=#5F6B7A;" vertex="1" parent="1">
+          <mxGeometry x="300" y="452" width="636" height="52" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
